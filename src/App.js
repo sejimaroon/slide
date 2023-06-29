@@ -95,8 +95,8 @@ const App = () => {
             <label>
               Autoplay Delay (seconds):
               <input type="number" value={autoplayDelay} onChange={handleAutoplayDelayChange} />
-  </label>
-</div>
+            </label>
+          </div>
           <div>
             <label>
               Speed:
@@ -104,7 +104,6 @@ const App = () => {
               ms
             </label>
           </div>
-
           <div>
             <label>
               <input type="checkbox" checked={animation} onChange={toggleAnimation} />
@@ -113,7 +112,6 @@ const App = () => {
           </div>
           <button onClick={handleApplySettings}>設定</button>
         </div>
-
         <Swiper
           ref={swiperRef}
           modules={[Navigation, Pagination, Scrollbar, A11y, Autoplay]}
