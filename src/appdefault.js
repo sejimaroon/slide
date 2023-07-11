@@ -1,5 +1,5 @@
 import React, { useState, useRef, useEffect } from 'react';
-import { Navigation, Pagination, Scrollbar, A11y, Autoplay, EffectFade} from 'swiper/modules';
+import { Navigation, Pagination, Scrollbar, A11y, Autoplay, EffectFade, EffectCoverflow, EffectFlip } from 'swiper/modules';
 import { Swiper, SwiperSlide } from 'swiper/react';
 import './App.css';
 import 'swiper/css';
@@ -7,7 +7,9 @@ import 'swiper/css/navigation';
 import 'swiper/css/pagination';
 import 'swiper/css/scrollbar';
 import 'swiper/css/effect-fade';
-
+import 'swiper/css/effect-cube';
+import 'swiper/css/effect-coverflow';
+import 'swiper/css/effect-flip';
 import Dropzone from 'react-dropzone';
 import Compressor from 'compressorjs';
 import { createFFmpeg, fetchFile } from '@ffmpeg/ffmpeg';
@@ -24,7 +26,7 @@ const App = () => {
   const [viewportHeight, setViewportHeight] = useState(0);
   const [autoplay, setAutoplay] = useState(true);
   const [speed, setSpeed] = useState(1000);
-
+  const [effect, setEffect] = useState('default');
   const [autoplayDelay, setAutoplayDelay] = useState(2);
 
   const handleDrop = async (acceptedFiles) => {
@@ -69,15 +71,37 @@ const App = () => {
     setAutoplayDelay(newDelay >= 0 ? newDelay : 0);
   };
 
+  const handleEffectChange = (event) => {
+    const newEffect = event.target.value;
+    setEffect(newEffect); // ローカルのステートを更新
+
+    // サーバーにアニメーションの設定を送信
+    const requestBody = {
+      autoplayDelay: autoplayDelay,
+      speed: speed,
+      effect: newEffect, // 新しいアニメーションの設定を追加
+    };
+
+    axios.post('/slide/updateSettings', requestBody)
+      .then(response => {
+        console.log(response.data);
+      })
+      .catch(error => {
+        console.error(error);
+      });
+  };
+
+
   const handleApplySettings = () => {
     if (swiperRef.current) {
       const swiper = swiperRef.current.swiper;
       swiper.params.autoplay = autoplay ? { delay: autoplayDelay * 1000 } : false;
       swiper.params.speed = speed >= 0 ? speed : 0;
-
+      swiper.params.effect = effect;
       swiper.update();
       swiper.autoplay.start();
 
+      // 更新された再生時間をサーバーに送信
       const requestBody = {
         autoplayDelay: autoplayDelay,
         speed: speed
@@ -234,7 +258,17 @@ const App = () => {
               ミリ秒
             </label>
           </div>
-          
+          <div>
+            <label>
+              Animation:
+              <select value={effect} onChange={handleEffectChange}>
+                <option value="default">default</option>
+                <option value="fade">fade</option>
+                <option value="coverflow">coverflow</option>
+                <option value="flip">flip</option>
+              </select>
+            </label>
+          </div>
           <button onClick={handleApplySettings}>設定</button>
         </div>
         {images.length > 0 && (
@@ -252,7 +286,7 @@ const App = () => {
         <Swiper
           ref={swiperRef}
           grabCursor={true}
-          modules={[Navigation, Pagination, Scrollbar, A11y, Autoplay, EffectFade]}
+          modules={[Navigation, Pagination, Scrollbar, A11y, Autoplay, EffectFade, EffectCoverflow, EffectFlip]}
           slidesPerView={1}
           spaceBetween={30}
           navigation={true}
@@ -260,7 +294,8 @@ const App = () => {
           pagination={{ clickable: true }}
           autoplay={autoplay ? { delay: speed } : false}
           speed={speed}
-          effect='fade'
+          effect={effect}
+z
           fadeEffect={{
             crossFade: true
           }}

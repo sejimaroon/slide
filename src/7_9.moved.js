@@ -1,5 +1,5 @@
 import React, { useState, useRef, useEffect } from 'react';
-import { Navigation, Pagination, Scrollbar, A11y, Autoplay, EffectFade} from 'swiper/modules';
+import { Navigation, Pagination, Scrollbar, A11y, Autoplay, EffectFade, EffectCube, EffectCoverflow, EffectFlip } from 'swiper/modules';
 import { Swiper, SwiperSlide } from 'swiper/react';
 import './App.css';
 import 'swiper/css';
@@ -7,11 +7,12 @@ import 'swiper/css/navigation';
 import 'swiper/css/pagination';
 import 'swiper/css/scrollbar';
 import 'swiper/css/effect-fade';
-
+import 'swiper/css/effect-cube';
+import 'swiper/css/effect-coverflow';
+import 'swiper/css/effect-flip';
 import Dropzone from 'react-dropzone';
 import Compressor from 'compressorjs';
 import { createFFmpeg, fetchFile } from '@ffmpeg/ffmpeg';
-import axios from 'axios';
 
 const ffmpeg = createFFmpeg({ log: true });
 
@@ -24,7 +25,7 @@ const App = () => {
   const [viewportHeight, setViewportHeight] = useState(0);
   const [autoplay, setAutoplay] = useState(true);
   const [speed, setSpeed] = useState(1000);
-
+  const [effect, setEffect] = useState('default');
   const [autoplayDelay, setAutoplayDelay] = useState(2);
 
   const handleDrop = async (acceptedFiles) => {
@@ -69,27 +70,25 @@ const App = () => {
     setAutoplayDelay(newDelay >= 0 ? newDelay : 0);
   };
 
+  const handleEffectChange = (event) => {
+    const newEffect = event.target.value;
+    setEffect(newEffect);
+    console.log(newEffect);
+    if (swiperRef.current) {
+      const swiper = swiperRef.current.swiper;
+      swiper.params.effect = newEffect;
+      swiper.update();
+    }
+  };
+
   const handleApplySettings = () => {
     if (swiperRef.current) {
       const swiper = swiperRef.current.swiper;
       swiper.params.autoplay = autoplay ? { delay: autoplayDelay * 1000 } : false;
       swiper.params.speed = speed >= 0 ? speed : 0;
-
+      swiper.params.effect = effect;
       swiper.update();
       swiper.autoplay.start();
-
-      const requestBody = {
-        autoplayDelay: autoplayDelay,
-        speed: speed
-      };
-
-      axios.post('/slide/updateSettings', requestBody)
-        .then(response => {
-          console.log(response.data);
-        })
-        .catch(error => {
-          console.error(error);
-        });
     }
   };
 
@@ -161,8 +160,7 @@ const App = () => {
         '-vf', 'scale=trunc(iw/2)*2:trunc(ih/2)*2',
         '-c:v', 'libx264',
         '-pix_fmt', 'yuv420p',
-        '-s', '1340x670',
-        '-t', `${autoplayDelay * speed}`,
+        '-s', '1340x670', // 幅と高さを適切な値に置き換える
         'output.mp4'
       );
 
@@ -183,7 +181,7 @@ const App = () => {
     }
   };
 
-
+  
   useEffect(() => {
     const handleResize = () => {
       setViewportHeight(window.innerHeight);
@@ -191,7 +189,7 @@ const App = () => {
 
     handleResize(); // 初回のレンダリング時に実行
 
-    window.addEventListener('resize', handleResize); // ウィンンドウのリサイズイベントを監視
+    window.addEventListener('resize', handleResize); // ウィンドウのリサイズイベントを監視
 
     return () => {
       window.removeEventListener('resize', handleResize); // コンポーネントがアンマウントされた時にイベントリスナーを削除
@@ -234,7 +232,18 @@ const App = () => {
               ミリ秒
             </label>
           </div>
-          
+          <div>
+            <label>
+              Animation:
+              <select value={effect} onChange={handleEffectChange}>
+                <option value="default">default</option>
+                <option value="fade">fade</option>
+                <option value="cube">cube</option>
+                <option value="coverflow">coverflow</option>
+                <option value="flip">flip</option>
+              </select>
+            </label>
+          </div>
           <button onClick={handleApplySettings}>設定</button>
         </div>
         {images.length > 0 && (
@@ -252,7 +261,7 @@ const App = () => {
         <Swiper
           ref={swiperRef}
           grabCursor={true}
-          modules={[Navigation, Pagination, Scrollbar, A11y, Autoplay, EffectFade]}
+          modules={[Navigation, Pagination, Scrollbar, A11y, Autoplay, EffectFade, EffectCube, EffectCoverflow, EffectFlip]}
           slidesPerView={1}
           spaceBetween={30}
           navigation={true}
@@ -260,9 +269,19 @@ const App = () => {
           pagination={{ clickable: true }}
           autoplay={autoplay ? { delay: speed } : false}
           speed={speed}
-          effect='fade'
-          fadeEffect={{
-            crossFade: true
+          effect={effect}
+          coverflowEffect={{
+            rotate: 50,
+            stretch: 0,
+            depth: 100,
+            modifier: 1,
+            slideShadows: true,
+          }}
+          cubeEffect={{
+            shadow: true,
+            slideShadows: true,
+            shadowOffset: 20,
+            shadowScale: 0.94,
           }}
         >
           {images.map((image, index) => (

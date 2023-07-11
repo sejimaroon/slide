@@ -4,20 +4,35 @@
   "version": "0.1.0",
   "private": true,
   "dependencies": {
+    "@babel/core": "^7.22.8",
+    "@ffmpeg/core": "^0.11.0",
+    "@ffmpeg/ffmpeg": "^0.11.6",
     "@testing-library/jest-dom": "^5.16.5",
     "@testing-library/react": "^13.4.0",
     "@testing-library/user-event": "^13.5.0",
+    "axios": "^1.4.0",
+    "babel-loader": "^9.1.3",
     "compressorjs": "^1.2.1",
+    "express": "^4.18.2",
+    "ffmpeg": "^0.0.4",
+    "file-saver": "^2.0.5",
+    "fluent-ffmpeg": "^2.1.2",
     "gh-pages": "^5.0.0",
+    "multer": "^1.4.5-lts.1",
+    "path": "^0.12.7",
     "react": "^18.2.0",
     "react-dom": "^18.2.0",
     "react-dropzone": "^14.2.3",
+    "react-error-boundary": "^4.0.10",
     "react-image-gallery": "^1.2.12",
-    "react-scripts": "5.0.1",
+    "react-player": "^2.12.0",
+    "react-router-dom": "^6.14.0",
+    "react-scripts": "^5.0.1",
     "react-slick": "^0.29.0",
     "react-transition-group": "^4.4.5",
     "sass": "^1.63.6",
     "slick-carousel": "^1.8.1",
+    "swiper": "^10.0.4",
     "web-vitals": "^2.1.4"
   },
   "scripts": {
@@ -26,7 +41,9 @@
     "test": "react-scripts test",
     "eject": "react-scripts eject",
     "predeploy": "npm run build",
-    "deploy": "gh-pages -d build"
+    "deploy": "gh-pages -d build",
+    "postbuild": "copy build\\index.html build\\404.html",
+    "open": "npx webpack --config webpack.config.js && node dist/server.bundle.js"
   },
   "eslintConfig": {
     "extends": [
@@ -47,9 +64,15 @@
     ]
   },
   "devDependencies": {
+    "@babel/plugin-proposal-private-property-in-object": "7.16.0",
+    "@babel/preset-react": "^7.22.5",
     "@types/react": "^18.2.14",
     "@types/react-dom": "^18.2.6",
+    "cross-env": "^7.0.3",
+    "gh-pages": "^5.0.0",
     "typescript": "^5.1.3",
-    "gh-pages": "^5.0.0"
+    "webpack": "^5.88.1",
+    "webpack-cli": "^5.1.4",
+    "webpack-dev-server": "^4.15.1"
   }
 }
