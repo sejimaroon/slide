@@ -103,6 +103,8 @@ app.get('/slide/getSettings', function (req, res) {
   });
 });
 app.get('*', function (req, res) {
+  res.setHeader('Cross-Origin-Opener-Policy', 'same-origin');
+  res.setHeader('Cross-Origin-Embedder-Policy', 'require-corp');
   var app = _server.default.renderToString( /*#__PURE__*/_react.default.createElement(_App.default, null));
   var html = "\n    <html>\n    <head>\n      <meta http-equiv=\"Cross-Origin-Opener-Policy\" content=\"same-origin\">\n      <meta http-equiv=\"Cross-Origin-Embedder-Policy\" content=\"require-corp\">\n    </head>\n    <body>\n      <div id=\"root\">".concat(app, "</div>\n      <script src=\"client.bundle.js\"></script>\n    </body>\n    </html>\n  ");
   console.log(html);

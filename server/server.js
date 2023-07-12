@@ -89,6 +89,9 @@ app.get('/slide/getSettings', (req, res) => {
 });
 
 app.get('*', (req, res) => {
+  res.setHeader('Cross-Origin-Opener-Policy', 'same-origin');
+  res.setHeader('Cross-Origin-Embedder-Policy', 'require-corp');
+  
   const app = ReactDOMServer.renderToString(<App />);
   const html = `
     <html>
