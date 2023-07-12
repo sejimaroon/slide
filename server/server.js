@@ -63,6 +63,7 @@ app.post('/slide/download', async (req, res) => {
     res.set('Content-Disposition', 'attachment; filename="slideshow.mp4"');
     res.setHeader("Cross-Origin-Opener-Policy", "same-origin");
     res.setHeader("Cross-Origin-Embedder-Policy", "require-corp");
+    res.setHeader('Permissions-Policy', 'interest-cohort=()');
     res.send(outputData);
   } catch (error) {
     console.error('Error generating video:', error);
@@ -88,23 +89,15 @@ app.get('/slide/getSettings', (req, res) => {
   res.json({ autoplayDelay, speed });
 });
 
-app.use((req, res, next) => {
-  res.setHeader('Access-Control-Allow-Origin', '*');
-  res.setHeader('Access-Control-Allow-Methods', 'GET, POST, OPTIONS');
-  res.setHeader('Access-Control-Allow-Headers', 'Content-Type');
-  next();
-});
-
 app.get('*', (req, res) => {
-  res.setHeader('Cross-Origin-Opener-Policy', 'same-origin');
-  res.setHeader('Cross-Origin-Embedder-Policy', 'require-corp');
-
+  
   const app = ReactDOMServer.renderToString(<App />);
   const html = `
     <html>
     <head>
       <meta http-equiv="Cross-Origin-Opener-Policy" content="same-origin">
       <meta http-equiv="Cross-Origin-Embedder-Policy" content="require-corp">
+      <meta http-equiv="Permissions-Policy" content="interest-cohort=()">
     </head>
     <body>
       <div id="root">${app}</div>

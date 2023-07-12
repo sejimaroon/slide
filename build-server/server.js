@@ -63,21 +63,22 @@ app.post('/slide/download', /*#__PURE__*/function () {
           res.set('Content-Disposition', 'attachment; filename="slideshow.mp4"');
           res.setHeader("Cross-Origin-Opener-Policy", "same-origin");
           res.setHeader("Cross-Origin-Embedder-Policy", "require-corp");
+          res.setHeader('Permissions-Policy', 'interest-cohort=()');
           res.send(outputData);
-          _context.next = 25;
+          _context.next = 26;
           break;
-        case 21:
-          _context.prev = 21;
+        case 22:
+          _context.prev = 22;
           _context.t0 = _context["catch"](0);
           console.error('Error generating video:', _context.t0);
           res.status(500).json({
             error: 'Failed to generate video'
           });
-        case 25:
+        case 26:
         case "end":
           return _context.stop();
       }
-    }, _callee, null, [[0, 21]]);
+    }, _callee, null, [[0, 22]]);
   }));
   return function (_x, _x2) {
     return _ref.apply(this, arguments);
@@ -102,17 +103,9 @@ app.get('/slide/getSettings', function (req, res) {
     speed: speed
   });
 });
-app.use(function (req, res, next) {
-  res.setHeader('Access-Control-Allow-Origin', '*');
-  res.setHeader('Access-Control-Allow-Methods', 'GET, POST, OPTIONS');
-  res.setHeader('Access-Control-Allow-Headers', 'Content-Type');
-  next();
-});
 app.get('*', function (req, res) {
-  res.setHeader('Cross-Origin-Opener-Policy', 'same-origin');
-  res.setHeader('Cross-Origin-Embedder-Policy', 'require-corp');
   var app = _server.default.renderToString( /*#__PURE__*/_react.default.createElement(_App.default, null));
-  var html = "\n    <html>\n    <head>\n      <meta http-equiv=\"Cross-Origin-Opener-Policy\" content=\"same-origin\">\n      <meta http-equiv=\"Cross-Origin-Embedder-Policy\" content=\"require-corp\">\n    </head>\n    <body>\n      <div id=\"root\">".concat(app, "</div>\n      <script src=\"client.bundle.js\"></script>\n    </body>\n    </html>\n  ");
+  var html = "\n    <html>\n    <head>\n      <meta http-equiv=\"Cross-Origin-Opener-Policy\" content=\"same-origin\">\n      <meta http-equiv=\"Cross-Origin-Embedder-Policy\" content=\"require-corp\">\n      <meta http-equiv=\"Permissions-Policy\" content=\"interest-cohort=()\">\n    </head>\n    <body>\n      <div id=\"root\">".concat(app, "</div>\n      <script src=\"client.bundle.js\"></script>\n    </body>\n    </html>\n  ");
   console.log(html);
   res.setHeader('Cross-Origin-Opener-Policy', 'same-origin');
   res.setHeader('Cross-Origin-Embedder-Policy', 'require-corp');
