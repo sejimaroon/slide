@@ -85,24 +85,18 @@ app.post('/slide/download', /*#__PURE__*/function () {
 }());
 var autoplayDelay = 2;
 var speed = 1000;
-/*
-let effect = 'default'; // 追加: デフォルトのアニメーション効果
-*/
-
 app.post('/slide/updateSettings', function (req, res) {
   var _req$body = req.body,
     newAutoplayDelay = _req$body.autoplayDelay,
     newSpeed = _req$body.speed;
 
-  // 再生時間の設定を更新
+  // 再生時間と速度の設定を更新
   autoplayDelay = newAutoplayDelay;
   speed = newSpeed;
-  /*effect = newEffect;*/ // アニメーションの設定を更新
-
   res.send('Settings updated successfully.');
 });
 app.get('/slide/getSettings', function (req, res) {
-  // 現在の再生時間とアニメーションの設定を返す
+  // 現在の再生時間と速度の設定を返す
   res.json({
     autoplayDelay: autoplayDelay,
     speed: speed
