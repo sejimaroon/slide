@@ -88,10 +88,17 @@ app.get('/slide/getSettings', (req, res) => {
   res.json({ autoplayDelay, speed });
 });
 
+app.use((req, res, next) => {
+  res.setHeader('Access-Control-Allow-Origin', '*');
+  res.setHeader('Access-Control-Allow-Methods', 'GET, POST, OPTIONS');
+  res.setHeader('Access-Control-Allow-Headers', 'Content-Type');
+  next();
+});
+
 app.get('*', (req, res) => {
   res.setHeader('Cross-Origin-Opener-Policy', 'same-origin');
   res.setHeader('Cross-Origin-Embedder-Policy', 'require-corp');
-  
+
   const app = ReactDOMServer.renderToString(<App />);
   const html = `
     <html>
