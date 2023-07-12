@@ -42,7 +42,8 @@
     "eject": "react-scripts eject",
     "predeploy": "npm run build",
     "deploy": "gh-pages -d build",
-    "postbuild": "copy build\\index.html build\\404.html",
+    "build-server": "babel server --out-dir build-server",
+    "postbuild": "npm run build-server",
     "open": "npx webpack --config webpack.config.js && node dist/server.bundle.js"
   },
   "eslintConfig": {
@@ -64,6 +65,7 @@
     ]
   },
   "devDependencies": {
+    "@babel/cli": "^7.22.6",
     "@babel/plugin-proposal-private-property-in-object": "7.16.0",
     "@babel/preset-react": "^7.22.5",
     "@types/react": "^18.2.14",

@@ -45,10 +45,10 @@
   background-color: aqua !important;
 }
 .swiper-button-prev {
-  color: transparent !important;
+  display: none !important;
 }
 .swiper-button-next {
-  color:transparent !important;
+  display: none !important;
 }
 .dropzone {
   margin-bottom:20px;

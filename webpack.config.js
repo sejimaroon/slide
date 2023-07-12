@@ -41,6 +41,12 @@ const clientConfig = {
       react: require.resolve('react'),
     },
   },
+  devServer: {
+    headers: {
+      'Cross-Origin-Opener-Policy': 'same-origin',
+      'Cross-Origin-Embedder-Policy': 'require-corp',
+    },
+  },
 };
 const serverConfig = {
   target: 'node',
@@ -82,6 +88,12 @@ const serverConfig = {
     extensions: [ '.ts', '.js', '.tsx', '.jsx', '.json' ],
     alias: {
       react: require.resolve('react'),
+    },
+  },
+  devServer: {
+    headers: {
+      'Cross-Origin-Opener-Policy': 'same-origin',
+      'Cross-Origin-Embedder-Policy': 'require-corp',
     },
   },
 };

@@ -1,5 +1,4 @@
 import React from 'react';
-import ReactDOMServer from 'react-dom/server';
 import App from './../src/App';
 
 const express = require('express');
@@ -7,7 +6,6 @@ const path = require('path');
 const { createFFmpeg, fetchFile } = require('@ffmpeg/ffmpeg');
 const fs = require('fs');
 const bodyParser = require('body-parser');
-
 
 const app = express();
 const port = 4000;
@@ -43,7 +41,7 @@ app.post('/slide/download', async (req, res) => {
     })));
 
     const slideDuration = autoplayDelay * images.length;
-    const outputFilePath = path.join(tempDir, 'output.mp4');
+    const outputFilePath = path.join(tempDir, 'output.gif');
 
     await ffmpeg.run(
       '-framerate', '1',
@@ -60,14 +58,14 @@ app.post('/slide/download', async (req, res) => {
 
     const outputData = fs.readFileSync(outputFilePath);
 
-    res.set('Content-Type', 'video/mp4');
-    res.set('Content-Disposition', 'attachment; filename="slideshow.mp4"');
+    res.set('Content-Type', 'image/gif');
+    res.set('Content-Disposition', 'attachment; filename="slideshow.gif"');
     res.setHeader("Cross-Origin-Opener-Policy", "same-origin");
     res.setHeader("Cross-Origin-Embedder-Policy", "require-corp");
     res.send(outputData);
   } catch (error) {
-    console.error('Error generating video:', error);
-    res.status(500).json({ error: 'Failed to generate video' });
+    console.error('Error generating gif:', error);
+    res.status(500).json({ error: 'Failed to generate gif' });
   }
 });
 
@@ -78,24 +76,22 @@ let effect = 'default'; // 追加: デフォルトのアニメーション効果
 */
 
 app.post('/slide/updateSettings', (req, res) => {
-  const { autoplayDelay: newAutoplayDelay, speed: newSpeed} = req.body;
+  const { autoplayDelay: newAutoplayDelay, speed: newSpeed } = req.body;
 
-  // 再生時間の設定を更新
+  // autoplayDelayとspeedの値を更新します
   autoplayDelay = newAutoplayDelay;
   speed = newSpeed;
-  /*effect = newEffect;*/ // アニメーションの設定を更新
 
   res.send('Settings updated successfully.');
 });
-
 app.get('/slide/getSettings', (req, res) => {
-  // 現在の再生時間とアニメーションの設定を返す
-  res.json({ autoplayDelay, speed});
+  // 現在のautoplayDelayとspeedの値を返します
+  res.json({ autoplayDelay, speed });
 });
 
 
 app.get('*', (req, res) => {
-  const app = ReactDOMServer.renderToString(<App />);
+  const app = <App />;
   const html = `
     <html>
     <head>
@@ -113,7 +109,6 @@ app.get('*', (req, res) => {
   res.setHeader('Cross-Origin-Embedder-Policy', 'require-corp');
   res.send(html);
 });
-
 
 app.listen(port, () => {
   console.log(`Server is running on port ${port}`);

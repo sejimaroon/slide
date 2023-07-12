@@ -24,7 +24,6 @@ const App = () => {
   const [viewportHeight, setViewportHeight] = useState(0);
   const [autoplay, setAutoplay] = useState(true);
   const [speed, setSpeed] = useState(1000);
-
   const [autoplayDelay, setAutoplayDelay] = useState(2);
 
   const handleDrop = async (acceptedFiles) => {
@@ -138,33 +137,34 @@ const App = () => {
 
   const handleDownload = async () => {
     setIsConverting(true);
-
+  
     try {
       const capturedSlides = await captureSlides();
-      setCapturedImages(capturedSlides);
-
+      const capturedImageURLs = capturedSlides.map((slide) => slide.url); // 画像のURLの配列を取得
+  
+      // Convert captured images to video using ffmpeg
       await ffmpeg.load();
       ffmpeg.setProgress(({ ratio }) => {
         console.log(`Conversion progress: ${Math.round(ratio * 100)}%`);
       });
-
-      for (let i = 0; i < capturedSlides.length; i++) {
-        const slide = capturedSlides[i];
-        const imageData = await fetchFile(slide);
+  
+      for (let i = 0; i < capturedImageURLs.length; i++) {
+        const slideURL = capturedImageURLs[i];
+        const imageData = await fetchFile(slideURL);
         ffmpeg.FS('writeFile', `input_${i}.jpg`, imageData);
       }
-
+  
       await ffmpeg.run(
         '-framerate', '1',
         '-i', 'input_%d.jpg',
-        '-vf', 'scale=trunc(iw/2)*2:trunc(ih/2)*2',
+        '-vf', 'scale=trunc(iw/2)*2:trunc(ih/2)*2,fade=t=in:st=0:d=0.5:alpha=1,fade=t=out:st=1.5:d=0.5:alpha=1', // フェードのアニメーションを適用
         '-c:v', 'libx264',
         '-pix_fmt', 'yuv420p',
         '-s', '1340x670',
         '-t', `${autoplayDelay * speed}`,
         'output.mp4'
       );
-
+  
       const outputData = ffmpeg.FS('readFile', 'output.mp4');
       const url = URL.createObjectURL(new Blob([outputData.buffer], { type: 'video/mp4' }));
       const link = document.createElement('a');
@@ -174,26 +174,26 @@ const App = () => {
       link.click();
       link.remove();
       URL.revokeObjectURL(url);
-
+  
       setIsConverting(false);
     } catch (error) {
       console.error(error);
       setIsConverting(false);
     }
   };
-
+  
 
   useEffect(() => {
     const handleResize = () => {
       setViewportHeight(window.innerHeight);
     };
 
-    handleResize(); 
+    handleResize(); // 初回のレンダリング時に実行
 
-    window.addEventListener('resize', handleResize); 
+    window.addEventListener('resize', handleResize); // ウィンンドウのリサイズイベントを監視
 
     return () => {
-      window.removeEventListener('resize', handleResize); 
+      window.removeEventListener('resize', handleResize); // コンポーネントがアンマウントされた時にイベントリスナーを削除
     };
   }, []);
 
