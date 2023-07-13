@@ -40,13 +40,12 @@
     "build": "react-scripts build",
     "test": "react-scripts test",
     "eject": "react-scripts eject",
-    "predeploy": "npm run build",
+    "predeploy": "echo Predeploy script executed",
     "deploy": "gh-pages -d build",
-    "build-server": "babel server --out-dir build-server",
-    "postbuild": "npm run build-server",
     "open": "npx webpack --config webpack.config.js && node dist/server.bundle.js",
     "git-ud": "npm run build --clear-chache && git add . && git commit -m 'message' && git push"
   },
+  
   "eslintConfig": {
     "extends": [
       "react-app",
