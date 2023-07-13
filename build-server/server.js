@@ -109,6 +109,7 @@ app.get('*', function (req, res) {
   console.log(html);
   res.setHeader('Cross-Origin-Opener-Policy', 'same-origin');
   res.setHeader('Cross-Origin-Embedder-Policy', 'require-corp');
+  res.setHeader('Premissions-Policy', 'interest-cohort=()');
   res.send(html);
 });
 app.listen(port, function () {
