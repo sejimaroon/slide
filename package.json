@@ -45,7 +45,6 @@
     "open": "npx webpack --config webpack.config.js && node dist/server.bundle.js",
     "git-ud": "npm run build --clear-chache && git add . && git commit -m 'message' && git push"
   },
-  
   "eslintConfig": {
     "extends": [
       "react-app",
