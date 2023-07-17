@@ -1,6 +1,5 @@
-// app.js
 import React, { useState, useRef, useEffect } from 'react';
-import { Navigation, Pagination, Scrollbar, A11y, Autoplay, EffectFade} from 'swiper/modules';
+import { Navigation, Pagination, Scrollbar, A11y, Autoplay, EffectFade, EffectCoverflow, EffectFlip } from 'swiper/modules';
 import { Swiper, SwiperSlide } from 'swiper/react';
 import './App.css';
 import 'swiper/css';
@@ -8,7 +7,9 @@ import 'swiper/css/navigation';
 import 'swiper/css/pagination';
 import 'swiper/css/scrollbar';
 import 'swiper/css/effect-fade';
-
+import 'swiper/css/effect-cube';
+import 'swiper/css/effect-coverflow';
+import 'swiper/css/effect-flip';
 import Dropzone from 'react-dropzone';
 import Compressor from 'compressorjs';
 import { createFFmpeg, fetchFile } from '@ffmpeg/ffmpeg';
@@ -25,7 +26,7 @@ const App = () => {
   const [viewportHeight, setViewportHeight] = useState(0);
   const [autoplay, setAutoplay] = useState(true);
   const [speed, setSpeed] = useState(1000);
-
+  const [effect, setEffect] = useState('default');
   const [autoplayDelay, setAutoplayDelay] = useState(2);
 
   const handleDrop = async (acceptedFiles) => {
@@ -70,15 +71,37 @@ const App = () => {
     setAutoplayDelay(newDelay >= 0 ? newDelay : 0);
   };
 
+  const handleEffectChange = (event) => {
+    const newEffect = event.target.value;
+    setEffect(newEffect); // ローカルのステートを更新
+
+    // サーバーにアニメーションの設定を送信
+    const requestBody = {
+      autoplayDelay: autoplayDelay,
+      speed: speed,
+      effect: newEffect, // 新しいアニメーションの設定を追加
+    };
+
+    axios.post('/slide/updateSettings', requestBody)
+      .then(response => {
+        console.log(response.data);
+      })
+      .catch(error => {
+        console.error(error);
+      });
+  };
+
+
   const handleApplySettings = () => {
     if (swiperRef.current) {
       const swiper = swiperRef.current.swiper;
       swiper.params.autoplay = autoplay ? { delay: autoplayDelay * 1000 } : false;
       swiper.params.speed = speed >= 0 ? speed : 0;
-
+      swiper.params.effect = effect;
       swiper.update();
       swiper.autoplay.start();
 
+      // 更新された再生時間をサーバーに送信
       const requestBody = {
         autoplayDelay: autoplayDelay,
         speed: speed
@@ -139,22 +162,23 @@ const App = () => {
 
   const handleDownload = async () => {
     setIsConverting(true);
-  
+
     try {
       const capturedSlides = await captureSlides();
       setCapturedImages(capturedSlides);
-  
+
+      // Convert captured images to video using ffmpeg
       await ffmpeg.load();
       ffmpeg.setProgress(({ ratio }) => {
         console.log(`Conversion progress: ${Math.round(ratio * 100)}%`);
       });
-  
+
       for (let i = 0; i < capturedSlides.length; i++) {
         const slide = capturedSlides[i];
         const imageData = await fetchFile(slide);
         ffmpeg.FS('writeFile', `input_${i}.jpg`, imageData);
       }
-  
+
       await ffmpeg.run(
         '-framerate', '1',
         '-i', 'input_%d.jpg',
@@ -165,7 +189,7 @@ const App = () => {
         '-t', `${autoplayDelay * speed}`,
         'output.mp4'
       );
-  
+
       const outputData = ffmpeg.FS('readFile', 'output.mp4');
       const url = URL.createObjectURL(new Blob([outputData.buffer], { type: 'video/mp4' }));
       const link = document.createElement('a');
@@ -175,7 +199,7 @@ const App = () => {
       link.click();
       link.remove();
       URL.revokeObjectURL(url);
-  
+
       setIsConverting(false);
     } catch (error) {
       console.error(error);
@@ -189,12 +213,12 @@ const App = () => {
       setViewportHeight(window.innerHeight);
     };
 
-    handleResize(); 
+    handleResize(); // 初回のレンダリング時に実行
 
-    window.addEventListener('resize', handleResize); 
+    window.addEventListener('resize', handleResize); // ウィンンドウのリサイズイベントを監視
 
     return () => {
-      window.removeEventListener('resize', handleResize); 
+      window.removeEventListener('resize', handleResize); // コンポーネントがアンマウントされた時にイベントリスナーを削除
     };
   }, []);
 
@@ -234,7 +258,17 @@ const App = () => {
               ミリ秒
             </label>
           </div>
-          
+          <div>
+            <label>
+              Animation:
+              <select value={effect} onChange={handleEffectChange}>
+                <option value="default">default</option>
+                <option value="fade">fade</option>
+                <option value="coverflow">coverflow</option>
+                <option value="flip">flip</option>
+              </select>
+            </label>
+          </div>
           <button onClick={handleApplySettings}>設定</button>
         </div>
         {images.length > 0 && (
@@ -252,15 +286,22 @@ const App = () => {
         <Swiper
           ref={swiperRef}
           grabCursor={true}
-          modules={[Navigation, Pagination, Scrollbar, A11y, Autoplay, EffectFade]}
+          modules={[Navigation, Pagination, Scrollbar, A11y, Autoplay, EffectFade, EffectCoverflow, EffectFlip]}
           slidesPerView={1}
           spaceBetween={30}
           navigation={true}
           loop={true}
           pagination={{ clickable: true }}
-          autoplay={autoplay ? { delay: autoplayDelay * 1000 } : false}
+          autoplay={autoplay ? { delay: speed } : false}
           speed={speed}
-          effect='fade'
+          effect={effect}
+          coverflowEffect={{
+            rotate: 50,
+            stretch: 0,
+            depth: 100,
+            modifier: 1,
+            slideShadows: true,
+          }}
           fadeEffect={{
             crossFade: true
           }}

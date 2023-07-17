@@ -1,3 +1,4 @@
+// server.js
 import React from 'react';
 import ReactDOMServer from 'react-dom/server';
 import App from './../src/App';
@@ -20,6 +21,7 @@ const ffmpeg = createFFmpeg({ log: true });
 app.post('/slide/download', async (req, res) => {
   try {
     const images = req.body;
+    const { autoplayDelay } = req.body;
 
     await ffmpeg.load();
 
@@ -47,7 +49,7 @@ app.post('/slide/download', async (req, res) => {
     await ffmpeg.run(
       '-framerate', '1',
       '-i', 'input_%d.jpg',
-      '-vf', 'scale=trunc(iw/2)*2:trunc(ih/2)*2',
+      '-vf', 'scale=trunc(iw/2)*2:trunc(ih/2)*2' ,
       '-c:v', 'libx264',
       '-pix_fmt', 'yuv420p',
       '-s', '1340x670',
@@ -76,8 +78,6 @@ let speed = 1000;
 
 app.post('/slide/updateSettings', (req, res) => {
   const { autoplayDelay: newAutoplayDelay, speed: newSpeed } = req.body;
-
-  // 再生時間と速度の設定を更新
   autoplayDelay = newAutoplayDelay;
   speed = newSpeed;
 
@@ -85,7 +85,6 @@ app.post('/slide/updateSettings', (req, res) => {
 });
 
 app.get('/slide/getSettings', (req, res) => {
-  // 現在の再生時間と速度の設定を返す
   res.json({ autoplayDelay, speed });
 });
 
