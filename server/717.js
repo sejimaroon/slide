@@ -1,5 +1,5 @@
 import React from 'react';
-import App from './../src/App';
+import App from '../src/App';
 import ReactDOMServer from 'react-dom/server';
 
 const express = require('express');
@@ -11,6 +11,9 @@ const bodyParser = require('body-parser');
 const app = express();
 const port = 4000;
 
+let autoplayDelay = 2;
+let speed = 1000;
+
 app.use(bodyParser.json());
 app.use(bodyParser.urlencoded({ extended: true }));
 app.use(express.static('./dist'));
@@ -20,6 +23,8 @@ const ffmpeg = createFFmpeg({ log: true });
 app.post('/slide/download', async (req, res) => {
   try {
     const images = req.body;
+    const { autoplayDelay: newAutoplayDelay } = req.body;
+    autoplayDelay = newAutoplayDelay;
 
     await ffmpeg.load();
 
@@ -41,50 +46,51 @@ app.post('/slide/download', async (req, res) => {
       data: fetchFile(imagePath),
     })));
 
-    const slideDuration = autoplayDelay * images.length; // スライドショーの再生時間を計算
-    const outputFilePath = path.join(tempDir, 'output.gif');
+    const outputFilePath = path.join(tempDir, 'output.mp4');
 
     await ffmpeg.run(
       '-framerate', '1',
-      '-i', 'input_%d.jpg',
-      '-vf', 'scale=trunc(iw/2)*2:trunc(ih/2)*2',
-      '-t', `${slideDuration}`, // スライドショーの再生時間を反映
+      ...imagePaths.map((_, index) => ['-i', `input_${index}.jpg`]).flat(),
+      '-vf',
+      `scale=trunc(iw/2)*2:trunc(ih/2)*2,fade=t=in:st=${autoplayDelay}:d=${speed},fade=t=out:st=${(autoplayDelay *
+        (images.length - 1)) +
+        autoplayDelay}:d=${speed}`,
+      '-c:v',
+      'libx264',
+      '-pix_fmt',
+      'yuv420p',
+      '-s',
+      '1340x670',
+      '-t',
+      `${autoplayDelay * images.length}`,
       outputFilePath
     );
 
     const outputData = fs.readFileSync(outputFilePath);
 
-    res.set('Content-Type', 'image/gif');
-    res.set('Content-Disposition', 'attachment; filename="slideshow.gif"');
-    res.setHeader("Cross-Origin-Opener-Policy", "same-origin");
-    res.setHeader("Cross-Origin-Embedder-Policy", "require-corp");
+    res.set('Content-Type', 'video/mp4');
+    res.set('Content-Disposition', 'attachment; filename="slideshow.mp4"');
+    res.setHeader('Cross-Origin-Opener-Policy', 'same-origin');
+    res.setHeader('Cross-Origin-Embedder-Policy', 'require-corp');
+    res.setHeader('Permissions-Policy', 'interest-cohort=()');
     res.send(outputData);
   } catch (error) {
-    console.error('Error generating gif:', error);
-    res.status(500).json({ error: 'Failed to generate gif' });
+    console.error('Error generating video:', error);
+    res.status(500).json({ error: 'Failed to generate video' });
   }
 });
 
-let autoplayDelay = 2;
-let speed = 1000;
-let effect = 'default'; // 追加: デフォルトのアニメーション効果
-
 app.post('/slide/updateSettings', (req, res) => {
-  const { autoplayDelay: newAutoplayDelay, speed: newSpeed, effect: newEffect } = req.body;
-
-  // 再生時間の設定を更新
+  const { autoplayDelay: newAutoplayDelay, speed: newSpeed } = req.body;
   autoplayDelay = newAutoplayDelay;
   speed = newSpeed;
-  effect = newEffect; // アニメーションの設定を更新
 
   res.send('Settings updated successfully.');
 });
 
 app.get('/slide/getSettings', (req, res) => {
-  // 現在の再生時間とアニメーションの設定を返す
-  res.json({ autoplayDelay, speed, effect });
+  res.json({ autoplayDelay, speed });
 });
-
 
 app.get('*', (req, res) => {
   const app = ReactDOMServer.renderToString(<App />);
@@ -100,7 +106,7 @@ app.get('*', (req, res) => {
     </body>
     </html>
   `;
-  console.log(html);
+
   res.setHeader('Cross-Origin-Opener-Policy', 'same-origin');
   res.setHeader('Cross-Origin-Embedder-Policy', 'require-corp');
   res.send(html);

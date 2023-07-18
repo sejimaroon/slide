@@ -1,7 +1,6 @@
-// server.js
 import React from 'react';
+import App from '../src/App';
 import ReactDOMServer from 'react-dom/server';
-import App from './../src/App';
 
 const express = require('express');
 const path = require('path');
@@ -9,8 +8,12 @@ const { createFFmpeg, fetchFile } = require('@ffmpeg/ffmpeg');
 const fs = require('fs');
 const bodyParser = require('body-parser');
 
+
 const app = express();
 const port = 4000;
+
+let autoplayDelay = 2;
+let speed = 1000;
 
 app.use(bodyParser.json());
 app.use(bodyParser.urlencoded({ extended: true }));
@@ -21,7 +24,7 @@ const ffmpeg = createFFmpeg({ log: true });
 app.post('/slide/download', async (req, res) => {
   try {
     const images = req.body;
-    const { autoplayDelay } = req.body;
+    /*const { autoplayDelay } = req.body;*/
 
     await ffmpeg.load();
 
@@ -43,24 +46,22 @@ app.post('/slide/download', async (req, res) => {
       data: fetchFile(imagePath),
     })));
 
-    const slideDuration = autoplayDelay * images.length;
     const outputFilePath = path.join(tempDir, 'output.mp4');
+    const framerate = 1 / autoplayDelay;
 
     await ffmpeg.run(
-      '-framerate', '1',
+      '-framerate', `${framerate}`,
       '-i', 'input_%d.jpg',
-      '-vf', 'scale=trunc(iw/2)*2:trunc(ih/2)*2' ,
+      '-loop','1',
+      '-vf', `scale=trunc(iw/2)*2:trunc(ih/2)*2`,
       '-c:v', 'libx264',
       '-pix_fmt', 'yuv420p',
       '-s', '1340x670',
-      '-filter_complex', `[0:v]split[v0][v1];[v0]format=yuva420p,fade=t=out:st=${slideDuration}:d=1:alpha=1[v0fade];[v1][v0fade]overlay=format=yuv420[out]`,
-      '-map', '[out]',
-      '-t', `${slideDuration}`,
+      '-t', 'autoplayDelay * images.length',      
       outputFilePath
     );
 
     const outputData = fs.readFileSync(outputFilePath);
-
     res.set('Content-Type', 'video/mp4');
     res.set('Content-Disposition', 'attachment; filename="slideshow.mp4"');
     res.setHeader("Cross-Origin-Opener-Policy", "same-origin");
@@ -72,9 +73,6 @@ app.post('/slide/download', async (req, res) => {
     res.status(500).json({ error: 'Failed to generate video' });
   }
 });
-
-let autoplayDelay = 2;
-let speed = 1000;
 
 app.post('/slide/updateSettings', (req, res) => {
   const { autoplayDelay: newAutoplayDelay, speed: newSpeed } = req.body;
@@ -89,14 +87,12 @@ app.get('/slide/getSettings', (req, res) => {
 });
 
 app.get('*', (req, res) => {
-  
   const app = ReactDOMServer.renderToString(<App />);
   const html = `
     <html>
     <head>
       <meta http-equiv="Cross-Origin-Opener-Policy" content="same-origin">
       <meta http-equiv="Cross-Origin-Embedder-Policy" content="require-corp">
-      <meta http-equiv="Permissions-Policy" content="interest-cohort=()">
     </head>
     <body>
       <div id="root">${app}</div>
@@ -107,10 +103,8 @@ app.get('*', (req, res) => {
   console.log(html);
   res.setHeader('Cross-Origin-Opener-Policy', 'same-origin');
   res.setHeader('Cross-Origin-Embedder-Policy', 'require-corp');
-  res.setHeader('Premissions-Policy', 'interest-cohort=()');
   res.send(html);
 });
-
 app.listen(port, () => {
   console.log(`Server is running on port ${port}`);
 });
