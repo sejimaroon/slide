@@ -8,6 +8,7 @@ const { createFFmpeg, fetchFile } = require('@ffmpeg/ffmpeg');
 const fs = require('fs');
 const bodyParser = require('body-parser');
 
+
 const app = express();
 const port = 4000;
 
@@ -23,8 +24,7 @@ const ffmpeg = createFFmpeg({ log: true });
 app.post('/slide/download', async (req, res) => {
   try {
     const images = req.body;
-    const { autoplayDelay: newAutoplayDelay } = req.body;
-    autoplayDelay = newAutoplayDelay;
+    /*const { autoplayDelay } = req.body;*/
 
     await ffmpeg.load();
 
@@ -47,31 +47,27 @@ app.post('/slide/download', async (req, res) => {
     })));
 
     const outputFilePath = path.join(tempDir, 'output.mp4');
-
+    /*const framerate = 1 / speed * 1000;*/
+    const framerate = 1 / autoplayDelay;
+    
     await ffmpeg.run(
-      '-framerate', '1',
-      ...imagePaths.map((_, index) => ['-i', `input_${index}.jpg`]).flat(),
-      '-vf',
-      `scale=trunc(iw/2)*2:trunc(ih/2)*2,fade=t=in:st=${autoplayDelay}:d=${speed},fade=t=out:st=${(autoplayDelay *
-        (images.length - 1)) +
-        autoplayDelay}:d=${speed}`,
-      '-c:v',
-      'libx264',
-      '-pix_fmt',
-      'yuv420p',
-      '-s',
-      '1340x670',
-      '-t',
-      `${autoplayDelay * images.length}`,
+      '-framerate', `${framerate}`,
+      '-i', 'input_%d.jpg',
+      '-loop','1',
+      '-vf', `scale=trunc(iw/2)*2:trunc(ih/2)*2`,
+      '-c:v', 'libx264',
+      '-pix_fmt', 'yuv420p',
+      '-s', '1340x670',
+      
+      '-t', 'autoplayDelay * images.length',      
       outputFilePath
     );
 
     const outputData = fs.readFileSync(outputFilePath);
-
     res.set('Content-Type', 'video/mp4');
     res.set('Content-Disposition', 'attachment; filename="slideshow.mp4"');
-    res.setHeader('Cross-Origin-Opener-Policy', 'same-origin');
-    res.setHeader('Cross-Origin-Embedder-Policy', 'require-corp');
+    res.setHeader("Cross-Origin-Opener-Policy", "same-origin");
+    res.setHeader("Cross-Origin-Embedder-Policy", "require-corp");
     res.setHeader('Permissions-Policy', 'interest-cohort=()');
     res.send(outputData);
   } catch (error) {
@@ -106,12 +102,11 @@ app.get('*', (req, res) => {
     </body>
     </html>
   `;
-
+  console.log(html);
   res.setHeader('Cross-Origin-Opener-Policy', 'same-origin');
   res.setHeader('Cross-Origin-Embedder-Policy', 'require-corp');
   res.send(html);
 });
-
 app.listen(port, () => {
   console.log(`Server is running on port ${port}`);
 });

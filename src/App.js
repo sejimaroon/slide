@@ -10,7 +10,7 @@ import 'swiper/css/effect-fade';
 
 import Dropzone from 'react-dropzone';
 import Compressor from 'compressorjs';
-import { createFFmpeg, fetchFile } from '@ffmpeg/ffmpeg';
+import { createFFmpeg } from '@ffmpeg/ffmpeg';
 import axios from 'axios';
 
 const ffmpeg = createFFmpeg({ log: true });
@@ -134,54 +134,59 @@ const App = () => {
       setIsConverting(false);
     }
   };
-
-  const handleDownload = async () => {
-    setIsConverting(true);
+  const buildXfadeFilter = (imageCount, framerate, autoplayDelay) => {
+    const xfadeFilters = [];
   
-    try {
-      const capturedSlides = await captureSlides();
-      setCapturedImages(capturedSlides);
-  
-      await ffmpeg.load();
-      ffmpeg.setProgress(({ ratio }) => {
-        console.log(`Conversion progress: ${Math.round(ratio * 100)}%`);
-      });
-  
-      for (let i = 0; i < capturedSlides.length; i++) {
-        const slide = capturedSlides[i];
-        const imageData = await fetchFile(slide);
-        ffmpeg.FS('writeFile', `input_${i}.jpg`, imageData);
-      }
-      const framerate = 1 / autoplayDelay;
-  
-      await ffmpeg.run(
-        '-framerate', `${framerate}`,
-        '-loop','1',
-        '-i', 'input_%d.jpg',
-        '-vf', 'scale=trunc(iw/2)*2:trunc(ih/2)*2',
-        '-c:v', 'libx264',
-        '-pix_fmt', 'yuv420p',
-        '-s', '1340x670',
-        '-t', `${autoplayDelay * images.length }`,
-        'output.mp4'
-      );
-  
-      const outputData = ffmpeg.FS('readFile', 'output.mp4');
-      const url = URL.createObjectURL(new Blob([outputData.buffer], { type: 'video/mp4' }));
-      const link = document.createElement('a');
-      link.href = url;
-      link.setAttribute('download', 'slideshow.mp4');
-      document.body.appendChild(link);
-      link.click();
-      link.remove();
-      URL.revokeObjectURL(url);
-  
-      setIsConverting(false);
-    } catch (error) {
-      console.error(error);
-      setIsConverting(false);
+    for (let i = 0; i < imageCount - 1; i++) {
+      const offset = i * autoplayDelay;
+      const xfadeFilter = `[${i}:v]fade=t=in:st=0:d=${framerate}:alpha=1,setpts=PTS-STARTPTS+${offset}/TB[v${i}];[v${i}][${i + 1}:v]xfade=transition=fade:duration=${framerate}:offset=${offset + autoplayDelay}[v${i + 1}]`;
+      xfadeFilters.push(xfadeFilter);
     }
+  
+    return xfadeFilters.join(';');
   };
+  
+  const handleDownload = async () => {
+    setIsConverting(true);  
+      try {
+        const capturedSlides = await captureSlides();
+        setCapturedImages(capturedSlides);
+  
+        await ffmpeg.load();
+        ffmpeg.setProgress(({ ratio }) => {
+          console.log(`Conversion progress: ${Math.round(ratio * 100)}%`);
+        });
+  
+        const framerate = 1 / autoplayDelay;
+        const xfadeFilterComplex = buildXfadeFilter(capturedSlides.length, framerate, autoplayDelay);
+  
+        await ffmpeg.run(
+          '-framerate', `${framerate}`,
+          '-i', 'input_%d.jpg',
+          '-filter_complex', xfadeFilterComplex,
+          '-c:v', 'libx264',
+          '-pix_fmt', 'yuv420p',
+          '-s', '1340x670',
+          '-t', `${autoplayDelay * images.length}`,
+          'output.mp4'
+        );
+  
+        const outputData = ffmpeg.FS('readFile', 'output.mp4');
+        const url = URL.createObjectURL(new Blob([outputData.buffer], { type: 'video/mp4' }));
+        const link = document.createElement('a');
+        link.href = url;
+        link.setAttribute('download', 'slideshow.mp4');
+        document.body.appendChild(link);
+        link.click();
+        link.remove();
+        URL.revokeObjectURL(url);
+  
+        setIsConverting(false);
+      } catch (error) {
+        console.error(error);
+        setIsConverting(false);
+      }
+    };
 
 
   useEffect(() => {
