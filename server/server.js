@@ -8,6 +8,7 @@ const { createFFmpeg, fetchFile } = require('@ffmpeg/ffmpeg');
 const fs = require('fs');
 const bodyParser = require('body-parser');
 
+
 const app = express();
 const port = 4000;
 
@@ -23,6 +24,7 @@ const ffmpeg = createFFmpeg({ log: true });
 app.post('/slide/download', async (req, res) => {
   try {
     const images = req.body;
+    /*const { autoplayDelay } = req.body;*/
 
     await ffmpeg.load();
 
@@ -45,19 +47,28 @@ app.post('/slide/download', async (req, res) => {
     })));
 
     const outputFilePath = path.join(tempDir, 'output.mp4');
+    /*const framerate = 1 / speed * 1000;*/
     const framerate = 1 / autoplayDelay;
-
+    
     await ffmpeg.run(
       '-framerate', `${framerate}`,
       '-i', 'input_%d.jpg',
-      '-filter_complex', buildXfadeFilter(images.length, framerate, autoplayDelay), // Build and apply the xfade filter here
-      '-loop', '1',
-      '-c:v', 'libx264',
-      '-pix_fmt', 'yuv420p',
+      '-vf', `fade=t=in:st=0:d=1:alpha=1,fade=t=out:st=${autoplayDelay * images.length - 1}:d=1:alpha=1`,
       '-s', '1340x670',
-      '-t', `${autoplayDelay * images.length}`,
       outputFilePath
     );
+      /*
+      '-framerate', `${framerate}`,
+      '-i', 'input_%d.jpg',
+      '-loop','1',
+      '-vf', `scale=trunc(iw/2)*2:trunc(ih/2)*2`,
+      `-filter_complex "xfade=transition=fade:duration=${speed}"`,
+      '-s', '1340x670',
+      '-t', 'autoplayDelay * images.length',
+      //`filter_complex "[0][1][2][3][4][5][6][7][8][9]xfade=transition=fade:duration=${framerate}:offset=${autoplayDelay},format=yuv420p"`,          
+      outputFilePath
+      */
+    
 
     const outputData = fs.readFileSync(outputFilePath);
     res.set('Content-Type', 'video/mp4');
@@ -71,17 +82,6 @@ app.post('/slide/download', async (req, res) => {
     res.status(500).json({ error: 'Failed to generate video' });
   }
 });
-
-// Helper function to build the xfade filter
-const buildXfadeFilter = (numImages, framerate, autoplayDelay) => {
-  const xfadeFilters = [];
-  for (let i = 0; i < numImages - 1; i++) {
-    const offset = i * autoplayDelay;
-    const xfadeFilter = `[${i}:v]fade=t=in:st=0:d=${framerate}:alpha=1,setpts=PTS-STARTPTS+${offset}/TB[v${i}];[v${i}][${i + 1}:v]xfade=transition=fade:duration=${framerate}:offset=${offset + autoplayDelay}[v${i + 1}]`;
-    xfadeFilters.push(xfadeFilter);
-  }
-  return xfadeFilters.join(';');
-};
 
 app.post('/slide/updateSettings', (req, res) => {
   const { autoplayDelay: newAutoplayDelay, speed: newSpeed } = req.body;
@@ -114,7 +114,6 @@ app.get('*', (req, res) => {
   res.setHeader('Cross-Origin-Embedder-Policy', 'require-corp');
   res.send(html);
 });
-
 app.listen(port, () => {
   console.log(`Server is running on port ${port}`);
 });

@@ -58,7 +58,7 @@ app.post('/slide/download', async (req, res) => {
       '-c:v', 'libx264',
       '-pix_fmt', 'yuv420p',
       '-s', '1340x670',
-      
+      'filter_complex', `[i:v]xfade=transition=fade:duration=${framerate}:offset=${autoplayDelay}`,
       '-t', 'autoplayDelay * images.length',      
       outputFilePath
     );

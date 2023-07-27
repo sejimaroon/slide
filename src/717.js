@@ -164,7 +164,6 @@ const App = () => {
         '-c:v', 'libx264',
         '-pix_fmt', 'yuv420p',
         '-s', '1340x670',
-        
         '-t', `${autoplayDelay * images.length }`,
         'output.mp4'
       );
