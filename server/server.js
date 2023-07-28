@@ -53,13 +53,6 @@ app.post('/slide/download', async (req, res) => {
     await ffmpeg.run(
       '-framerate', `${framerate}`,
       '-i', 'input_%d.jpg',
-      '-vf', `fade=t=in:st=0:d=1:alpha=1,fade=t=out:st=${autoplayDelay * images.length - 1}:d=1:alpha=1`,
-      '-s', '1340x670',
-      outputFilePath
-    );
-      /*
-      '-framerate', `${framerate}`,
-      '-i', 'input_%d.jpg',
       '-loop','1',
       '-vf', `scale=trunc(iw/2)*2:trunc(ih/2)*2`,
       `-filter_complex "xfade=transition=fade:duration=${speed}"`,
@@ -67,8 +60,14 @@ app.post('/slide/download', async (req, res) => {
       '-t', 'autoplayDelay * images.length',
       //`filter_complex "[0][1][2][3][4][5][6][7][8][9]xfade=transition=fade:duration=${framerate}:offset=${autoplayDelay},format=yuv420p"`,          
       outputFilePath
-      */
-    
+      /*
+      '-framerate', `${framerate}`,
+      '-i', 'input_%d.jpg',
+      '-vf', `fade=t=in:st=0:d=1:alpha=1,fade=t=out:st=${autoplayDelay * images.length - 1}:d=1:alpha=1`,
+      '-s', '1340x670',
+      outputFilePath
+      */  
+    );
 
     const outputData = fs.readFileSync(outputFilePath);
     res.set('Content-Type', 'video/mp4');

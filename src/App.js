@@ -172,14 +172,7 @@ const App = () => {
       const framerate = 1 / autoplayDelay;
 
       //ffmpeg動画設定
-      await ffmpeg.run(
-        '-loop','1',
-        '-i', 'input_%d.jpg',
-        '-filter_complex', `[_%d]fade=d=${framerate}:t=in:alpha=1,setpts=PTS-STARTPTS + ${autoplayDelay}/TB[f0];[2]fade=d=${framerate}:t=in:alpha=1,setpts=PTS-STARTPTS + ${autoplayDelay * 2 }/TB[f1]; [3]fade=d=${framerate}:t=in:alpha=1,setpts=PTS-STARTPTS +  ${autoplayDelay * 3 }/TB[f2];[4]fade=d=${framerate}:t=in:alpha=1,setpts=PTS-STARTPTS +  ${autoplayDelay * 4 }/TB[f3];[0][f0]overlay[bg1];[bg1][f1]overlay[bg2];[bg2][f2]overlay[bg3];[bg3][f3]overlay,format=yuv420p[v]`,
-        '-s', '1340x670',
-        '-c:v', 'libx264',
-        "output.mp4"
-        /*
+      await ffmpeg.run(       
         //ページ送りの速度
         '-framerate', `${framerate}`,
         //無限ループ
@@ -189,7 +182,7 @@ const App = () => {
         // 'filter_complex', `[0][1][2][3][4][5][6][7][8][9]xfade=transition=fade:duration=${framerate}:offset=${autoplayDelay},format=yuv420p`,
         //scaleフィルターで画像の解像度を指定。fadeフィルターでフェードインとフェードアウトの効果
         '-vf', `scale=trunc(iw/2)*2:trunc(ih/2)*2`,
-        `-filter_complex "xfade=transition=fade:duration=${speed}"`,
+        //`-filter_complex "xfade=transition=fade:duration=${speed}"`,
         //解像度を指定
         '-s', '1340x670',
         //H.264コーデック
@@ -202,6 +195,13 @@ const App = () => {
         '-t', `${autoplayDelay * images.length }`,
         //ファイル名を指定
         'output.mp4'
+        /*
+        '-loop','1',
+        '-i', 'input_%d.jpg',
+        '-filter_complex', `[_%d]fade=d=${framerate}:t=in:alpha=1,setpts=PTS-STARTPTS + ${autoplayDelay}/TB[f0];[2]fade=d=${framerate}:t=in:alpha=1,setpts=PTS-STARTPTS + ${autoplayDelay * 2 }/TB[f1]; [3]fade=d=${framerate}:t=in:alpha=1,setpts=PTS-STARTPTS +  ${autoplayDelay * 3 }/TB[f2];[4]fade=d=${framerate}:t=in:alpha=1,setpts=PTS-STARTPTS +  ${autoplayDelay * 4 }/TB[f3];[0][f0]overlay[bg1];[bg1][f1]overlay[bg2];[bg2][f2]overlay[bg3];[bg3][f3]overlay,format=yuv420p[v]`,
+        '-s', '1340x670',
+        '-c:v', 'libx264',
+        "output.mp4"
         */
       );
   
