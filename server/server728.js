@@ -45,7 +45,7 @@ app.post('/slide/download', async (req, res) => {
 
     const outputFilePath = path.join(tempDir, 'output.mp4');
     const framerate = 1 / autoplayDelay;
-
+    
     await ffmpeg.run(
       '-framerate', `${framerate}`,
       '-i', 'input_%d.jpg',
@@ -55,7 +55,7 @@ app.post('/slide/download', async (req, res) => {
       '-t', `${autoplayDelay * images.length}`,
       '-c:v', 'libx264',
       '-pix_fmt', 'yuv420p',
-      outputFilePath
+      'output.mp4'
     );
 
     if (fs.existsSync(outputFilePath)) {

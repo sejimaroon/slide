@@ -1,5 +1,5 @@
 import React, { useState, useRef, useEffect } from 'react';
-import { Navigation, Pagination, Scrollbar, A11y, Autoplay, EffectFade} from 'swiper/modules';
+import { Navigation, Pagination, Scrollbar, A11y, Autoplay, EffectFade } from 'swiper/modules';
 import { Swiper, SwiperSlide } from 'swiper/react';
 import './App.css';
 import 'swiper/css';
@@ -26,10 +26,9 @@ const App = () => {
   const [autoplayDelay, setAutoplayDelay] = useState(2);
   const [speed, setSpeed] = useState(1000);
 
-
   const handleDrop = async (acceptedFiles) => {
+    // スライドショー用に画像の変換
     const compressedImages = [];
-
     for (const file of acceptedFiles) {
       const compressedImage = await new Promise((resolve) => {
         new Compressor(file, {
@@ -49,7 +48,6 @@ const App = () => {
       }
     }
 
-    
     setImages((prevImages) => [
       ...prevImages,
       ...compressedImages.map((image) => ({ file: image, name: image.name })),
@@ -59,10 +57,12 @@ const App = () => {
   const toggleAutoplay = () => {
     setAutoplay((prevAutoplay) => !prevAutoplay);
   };
+
   const handleAutoplayDelayChange = (event) => {
     const newDelay = parseInt(event.target.value);
     setAutoplayDelay(newDelay >= 0 ? newDelay : 0);
   };
+
   const handleSpeedChange = (event) => {
     const newSpeed = parseInt(event.target.value);
     setSpeed(newSpeed >= 0 ? newSpeed : 0);
@@ -78,15 +78,16 @@ const App = () => {
       swiper.autoplay.start();
 
       const requestBody = {
-        autoPlayDelay: autoplayDelay,
+        autoplayDelay: autoplayDelay,
         speed: speed,
       };
-  
-      axios.post('/slide/updateSettings', requestBody)
-        .then(response => {
+
+      axios
+        .post('/slide/updateSettings', requestBody)
+        .then((response) => {
           console.log(response.data);
         })
-        .catch(error => {
+        .catch((error) => {
           console.error(error);
         });
     }
@@ -104,6 +105,7 @@ const App = () => {
         ctx.drawImage(image, 0, 0, slide.offsetWidth, slide.offsetHeight);
         resolve(canvas.toDataURL('image/jpeg', 1.0));
       };
+      image.crossOrigin = 'anonymous';
       image.src = slide.children[0].src;
     });
   };
@@ -135,70 +137,82 @@ const App = () => {
     }
   };
 
+
+  const generateFilterComplex = () => {
+    const framerate = 1 / autoplayDelay;
+    let filterComplex = '';
+    for (let i = 0; i < images.length; i++) {
+      filterComplex += `[${i}]fade=d=${framerate}:t=in:alpha=1,setpts=PTS-STARTPTS+${autoplayDelay}/TB[slide${i}];`;
+    }
+    filterComplex += `[slide0]`;
+    for (let i = 1; i < images.length; i++) {
+      filterComplex += `[slide${i}]xfade=transition=fade:duration=${framerate}:t=in:offset=${autoplayDelay}[bg${i}];`;
+    }
+    filterComplex += `format=yuv420p[v]`;
+    return filterComplex;
+  };
   const handleDownload = async () => {
     setIsConverting(true);
-  
-    try {
-      const capturedSlides = await captureSlides();
-      setCapturedImages(capturedSlides);
-  
-      await ffmpeg.load();
-      ffmpeg.setProgress(({ ratio }) => {
-        console.log(`Conversion progress: ${Math.round(ratio * 100)}%`);
-      });
-  
-      for (let i = 0; i < capturedSlides.length; i++) {
-        const slide = capturedSlides[i];
-        const imageData = await fetchFile(slide);
-        ffmpeg.FS('writeFile', `input_${i}.jpg`, imageData);
-      }
-  
-      /*const framerate = 1 / speed * 1000;*/
-      const framerate = 1 / autoplayDelay;
+  try {
+    const capturedSlides = await captureSlides();
+    setCapturedImages(capturedSlides);
 
-      await ffmpeg.run(
-        '-framerate', `${framerate}`,
-        '-loop','1',
-        '-i', 'input_%d.jpg',
-        '-vf', 'scale=trunc(iw/2)*2:trunc(ih/2)*2',
-        '-c:v', 'libx264',
-        '-pix_fmt', 'yuv420p',
-        '-s', '1340x670',
-        '-t', `${autoplayDelay * images.length }`,
-        'output.mp4'
-      );
-  
-      const outputData = ffmpeg.FS('readFile', 'output.mp4');
-      const url = URL.createObjectURL(new Blob([outputData.buffer], { type: 'video/mp4' }));
-      const link = document.createElement('a');
-      link.href = url;
-      link.setAttribute('download', 'slideshow.mp4');
-      document.body.appendChild(link);
-      link.click();
-      link.remove();
-      URL.revokeObjectURL(url);
-  
-      setIsConverting(false);
-    } catch (error) {
-      console.error(error);
-      setIsConverting(false);
+    await ffmpeg.load();
+    ffmpeg.setProgress(({ ratio }) => {
+      console.log(`Conversion progress: ${Math.round(ratio * 100)}%`);
+    });
+
+    for (let i = 0; i < capturedSlides.length; i++) {
+      const slide = capturedSlides[i];
+      const imageData = await fetchFile(slide);
+      ffmpeg.FS('writeFile', `input_${i}.jpg`, imageData);
     }
-  };
+
+    const framerate = 1 / autoplayDelay;
+
+    const filterComplex = generateFilterComplex();
+
+    await ffmpeg.run(
+      '-framerate', `${framerate}`,
+      ...images.map((_, index) => ['-i', `input_${index}.jpg`]).flat(),
+      '-filter_complex', filterComplex,
+      '-s', '1340x670',
+      '-c:v', 'libx264',
+      '-pix_fmt', 'yuv420p',
+      '-t', `${autoplayDelay * images.length}`,
+      'output.mp4'
+    );
+
+    const outputData = ffmpeg.FS('readFile', 'output.mp4');
+    const url = URL.createObjectURL(new Blob([outputData.buffer], { type: 'video/mp4' }));
+    const link = document.createElement('a');
+    link.href = url;
+    link.setAttribute('download', 'slideshow.mp4');
+    document.body.appendChild(link);
+    link.click();
+    link.remove();
+    URL.revokeObjectURL(url);
+    setIsConverting(false);
+
+  } catch (error) {
+    console.error(error);
+    setIsConverting(false);
+  }
+};
 
 
   useEffect(() => {
     const handleResize = () => {
       setViewportHeight(window.innerHeight);
     };
-
-    handleResize(); 
-
-    window.addEventListener('resize', handleResize); 
+    handleResize();
+    window.addEventListener('resize', handleResize);
 
     return () => {
-      window.removeEventListener('resize', handleResize); 
+      window.removeEventListener('resize', handleResize);
     };
   }, []);
+
 
   return (
     <section id="testimonials">
@@ -217,64 +231,64 @@ const App = () => {
           )}
         </Dropzone>
         <div className="settings">
-          <div>
-            <label>
-              <input type="checkbox" checked={autoplay} onChange={toggleAutoplay} />
-              Autoplay
-            </label>
-          </div>
-          <div>
-            <label>
-              Autoplay Delay (seconds):
-              <input type="text" value={autoplayDelay} onChange={handleAutoplayDelayChange} />         
-            </label>
-          </div>
-          <div>
-            <label>
-              PageSpeed:
-              <input type="text" value={speed} onChange={handleSpeedChange} />
-              ミリ秒
-            </label>
-          </div>
-          <button onClick={handleApplySettings}>設定</button>
+        <div>
+          <label>
+            <input type="checkbox" checked={autoplay} onChange={toggleAutoplay} />
+            Autoplay
+          </label>
         </div>
-        {images.length > 0 && (
-          <div>
-            <button onClick={handleConvert} disabled={isConverting}>
-              {isConverting ? '変換中...' : 'スライドショーに変換'}
-            </button>
-          </div>
-        )}
-        {capturedImages.length > 0 && (
-          <div>
-            <button onClick={handleDownload}>スライドショーをダウンロード</button>
-          </div>
-        )}
-        <Swiper
-          ref={swiperRef}
-          grabCursor={true}
-          modules={[Navigation, Pagination, Scrollbar, A11y, Autoplay, EffectFade]}
-          slidesPerView={1}
-          spaceBetween={30}
-          navigation={true}
-          loop={true}
-          pagination={{ clickable: true }}
-          autoplay={autoplay ? { delay: speed } : false}
-          speed={speed}
-          effect='fade'
-          fadeEffect={{
-            crossFade: true
-          }}
-        >
-          {images.map((image, index) => (
-            <SwiperSlide key={index}>
-              <img src={URL.createObjectURL(image.file)} alt="" style={{ width: '100%' }} />
-            </SwiperSlide>
-          ))}
-        </Swiper>
+        <div>
+          <label>
+            Autoplay Delay (seconds):
+            <input type="text" value={autoplayDelay} onChange={handleAutoplayDelayChange} />
+          </label>
+        </div>
+        <div>
+          <label>
+            PageSpeed:
+            <input type="text" value={speed} onChange={handleSpeedChange} />
+            ミリ秒
+          </label>
+        </div>
+        <button onClick={handleApplySettings}>設定</button>
       </div>
-    </section>
-  );
+      {images.length > 0 && (
+        <div>
+          <button onClick={handleConvert} disabled={isConverting}>
+            {isConverting ? '変換中...' : 'スライドショーに変換'}
+          </button>
+        </div>
+      )}
+      {capturedImages.length > 0 && (
+        <div>
+          <button onClick={handleDownload}>スライドショーをダウンロード</button>
+        </div>
+      )}
+      <Swiper
+        ref={swiperRef}
+        grabCursor={true}
+        modules={[Navigation, Pagination, Scrollbar, A11y, Autoplay, EffectFade]}
+        slidesPerView={1}
+        spaceBetween={30}
+        navigation={true}
+        loop={true}
+        pagination={{ clickable: true }}
+        autoplay={autoplay ? { delay: speed } : false}
+        speed={speed}
+        effect="fade"
+        fadeEffect={{
+          crossFade: true,
+        }}
+      >
+        {images.map((image, index) => (
+          <SwiperSlide key={index}>
+            <img src={URL.createObjectURL(image.file)} alt="" style={{ width: '100%' }} />
+          </SwiperSlide>
+        ))}
+      </Swiper>
+    </div>
+  </section>
+);
 };
 
 export default App;

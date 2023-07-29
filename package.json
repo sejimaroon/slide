@@ -19,6 +19,7 @@
     "ffmpeg": "^0.0.4",
     "file-saver": "^2.0.5",
     "fluent-ffmpeg": "^2.1.2",
+    "fs": "^0.0.1-security",
     "gh-pages": "^5.0.0",
     "multer": "^1.4.5-lts.1",
     "path": "^0.12.7",
