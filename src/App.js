@@ -147,27 +147,40 @@ const App = () => {
         console.log(`Conversion progress: ${Math.round(ratio * 100)}%`);
       });
   
-      for (let i = 0; i < capturedSlides.length; i++) {
+      const pageSpeed = speed / 1000;
+      const numImages = capturedSlides.length;
+
+      for (let i = 0; i < numImages; i++) {
         const slide = capturedSlides[i];
         const imageData = await fetchFile(slide);
         ffmpeg.FS('writeFile', `input_${i}.jpg`, imageData);
       }
-  
-      /*const framerate = 1 / speed * 1000;*/
-      const framerate = 1 / autoplayDelay;
+
+      let filterComplex = '';
+        for (let i = 0; i < numImages; i++) {
+          filterComplex += `[${i}]settb=AVTB[v${i}];`;
+        }
+
+      let xfadeFilters = '';
+        for (let i = 0; i < numImages - 1; i++) {
+          xfadeFilters += `[v${i}][v${i + 1}]xfade=transition=fade:duration=${pageSpeed}:offset=${autoplayDelay - pageSpeed};`;
+        }
+
+      filterComplex += xfadeFilters;
+      filterComplex += `[v${numImages - 2}][v${numImages - 1}]xfade=transition=fade:duration=${pageSpeed}:offset=${autoplayDelay - pageSpeed},scale=trunc(iw/2)*2:trunc(ih/2)*2[v]`;
+
 
       await ffmpeg.run(
-        '-framerate', `${framerate}`,
-        '-loop','1',
         '-i', 'input_%d.jpg',
-        '-vf', 'scale=trunc(iw/2)*2:trunc(ih/2)*2',
+        '-filter_complex', filterComplex,
+        '-map', '[v]',
         '-c:v', 'libx264',
         '-pix_fmt', 'yuv420p',
         '-s', '1340x670',
-        '-t', `${autoplayDelay * images.length }`,
         'output.mp4'
       );
-  
+
+
       const outputData = ffmpeg.FS('readFile', 'output.mp4');
       const url = URL.createObjectURL(new Blob([outputData.buffer], { type: 'video/mp4' }));
       const link = document.createElement('a');
@@ -184,7 +197,6 @@ const App = () => {
       setIsConverting(false);
     }
   };
-
 
   useEffect(() => {
     const handleResize = () => {

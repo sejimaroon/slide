@@ -8,7 +8,6 @@ const { createFFmpeg, fetchFile } = require('@ffmpeg/ffmpeg');
 const fs = require('fs');
 const bodyParser = require('body-parser');
 
-
 const app = express();
 const port = 4000;
 
@@ -24,8 +23,6 @@ const ffmpeg = createFFmpeg({ log: true });
 app.post('/slide/download', async (req, res) => {
   try {
     const images = req.body;
-    /*const { autoplayDelay } = req.body;*/
-
     await ffmpeg.load();
 
     const tempDir = path.join(__dirname, 'temp');
@@ -47,34 +44,42 @@ app.post('/slide/download', async (req, res) => {
     })));
 
     const outputFilePath = path.join(tempDir, 'output.mp4');
-    /*const framerate = 1 / speed * 1000;*/
-    const framerate = 1 / autoplayDelay;
-    
+    /*const framerate = 1 / autoplayDelay;*/
+    const pageSpeed = speed / 1000;
+
     await ffmpeg.run(
-      '-framerate', `${framerate}`,
-      '-i', 'input_%d.jpg',
+      /*'-framerate', `${framerate}`,*/
       '-loop','1',
-      '-vf', `scale=trunc(iw/2)*2:trunc(ih/2)*2`,
+      '-t', `${autoplayDelay}`,
+      '-i', 'input_0.jpg',
+      '-loop','1',
+      '-t', `${autoplayDelay}`,            
+      '-i', 'input_1.jpg',
+      '-filter_complex', `[0]settb=AVTB[v0];[1]settb=AVTB[v1];[v0][v1]xfade=transition=fade:duration=${pageSpeed}:offset=${autoplayDelay - pageSpeed},scale=trunc(iw/2)*2:trunc(ih/2)*2[v]`,          
+      '-map', '[v]',       
       '-c:v', 'libx264',
       '-pix_fmt', 'yuv420p',
       '-s', '1340x670',
-      '-t', 'autoplayDelay * images.length',      
-      outputFilePath
+      /*'-t', `${autoplayDelay * images.length }`,*/
+      'output.mp4'
     );
 
-    const outputData = fs.readFileSync(outputFilePath);
-    res.set('Content-Type', 'video/mp4');
-    res.set('Content-Disposition', 'attachment; filename="slideshow.mp4"');
-    res.setHeader("Cross-Origin-Opener-Policy", "same-origin");
-    res.setHeader("Cross-Origin-Embedder-Policy", "require-corp");
-    res.setHeader('Permissions-Policy', 'interest-cohort=()');
-    res.send(outputData);
+    if (fs.existsSync(outputFilePath)) {
+      const outputData = fs.readFileSync(outputFilePath);
+      res.set('Content-Type', 'video/mp4');
+      res.set('Content-Disposition', 'attachment; filename="slideshow.mp4"');
+      res.setHeader("Cross-Origin-Opener-Policy", "same-origin");
+      res.setHeader("Cross-Origin-Embedder-Policy", "require-corp");
+      res.setHeader('Permissions-Policy', 'interest-cohort=()');
+      res.send(outputData);
+    } else {
+      throw new Error('Output video file not found.');
+    }
   } catch (error) {
     console.error('Error generating video:', error);
     res.status(500).json({ error: 'Failed to generate video' });
   }
 });
-
 app.post('/slide/updateSettings', (req, res) => {
   const { autoplayDelay: newAutoplayDelay, speed: newSpeed } = req.body;
   autoplayDelay = newAutoplayDelay;
@@ -106,6 +111,7 @@ app.get('*', (req, res) => {
   res.setHeader('Cross-Origin-Embedder-Policy', 'require-corp');
   res.send(html);
 });
+
 app.listen(port, () => {
   console.log(`Server is running on port ${port}`);
 });

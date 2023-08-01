@@ -14,15 +14,20 @@ const port = 4000;
 let autoplayDelay = 2;
 let speed = 1000;
 
+
+
 app.use(bodyParser.json());
 app.use(bodyParser.urlencoded({ extended: true }));
 app.use(express.static('./dist'));
 
-const ffmpeg = createFFmpeg({ log: true });
+const ffmpeg = createFFmpeg(
+  { log: true }
+);
 
 app.post('/slide/download', async (req, res) => {
   try {
-    const images = req.body;
+    const { images, numImages, autoplayDelay, speed } = req.body; // 画像の配列と画像の数、autoplayDelay、speedを取得
+
     await ffmpeg.load();
 
     const tempDir = path.join(__dirname, 'temp');
@@ -31,7 +36,7 @@ app.post('/slide/download', async (req, res) => {
     }
 
     const imagePaths = [];
-    for (let i = 0; i < images.length; i++) {
+    for (let i = 0; i < numImages; i++) {
       const image = images[i];
       const imagePath = path.join(tempDir, `image_${i}.jpg`);
       fs.writeFileSync(imagePath, image, 'base64');
@@ -43,21 +48,30 @@ app.post('/slide/download', async (req, res) => {
       data: fetchFile(imagePath),
     })));
 
+    let filterComplex = '';
+      for (let i = 0; i < numImages; i++) {
+        filterComplex += `[${i}]settb=AVTB[v${i}];`;
+      }
+
+      let xfadeFilters = '';
+      for (let i = 0; i < numImages - 1; i++) {
+        xfadeFilters += `[v${i}][v${i + 1}]xfade=transition=fade:duration=${speed / 1000}:offset=${autoplayDelay - (speed / 1000)};`;
+      }
+
+      filterComplex += xfadeFilters;
+      filterComplex += `[v${numImages - 2}][v${numImages - 1}]xfade=transition=fade:duration=${speed / 1000}:offset=${autoplayDelay - (speed / 1000)},scale=trunc(iw/2)*2:trunc(ih/2)*2[v]`;
+
+      await ffmpeg.run(
+        '-i', 'input_%d.jpg',
+        '-filter_complex', filterComplex,
+        '-map', '[v]',
+        '-c:v', 'libx264',
+        '-pix_fmt', 'yuv420p',
+        '-s', '1340x670',
+        'output.mp4'
+      );
+
     const outputFilePath = path.join(tempDir, 'output.mp4');
-    const framerate = 1 / autoplayDelay;
-
-    await ffmpeg.run(
-      '-framerate', `${framerate}`,
-      '-i', 'input_%d.jpg',
-      '-loop', '1',
-      '-vf', `scale=trunc(iw/2)*2:trunc(ih/2)*2,filter_complex=xfade=transition=fade:duration=${framerate}:offset=${autoplayDelay}`,
-      '-s', '1340x670',
-      '-t', `${autoplayDelay * images.length}`,
-      '-c:v', 'libx264',
-      '-pix_fmt', 'yuv420p',
-      outputFilePath
-    );
-
     if (fs.existsSync(outputFilePath)) {
       const outputData = fs.readFileSync(outputFilePath);
       res.set('Content-Type', 'video/mp4');
@@ -74,6 +88,8 @@ app.post('/slide/download', async (req, res) => {
     res.status(500).json({ error: 'Failed to generate video' });
   }
 });
+
+
 app.post('/slide/updateSettings', (req, res) => {
   const { autoplayDelay: newAutoplayDelay, speed: newSpeed } = req.body;
   autoplayDelay = newAutoplayDelay;
