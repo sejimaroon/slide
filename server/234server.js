@@ -46,46 +46,48 @@ app.post('/slide/download', async (req, res) => {
       data: fetchFile(imagePath),
     })));
 
-
-    const changeTime = speed / 1000;
-    const offsetTime = autoplayDelay - changeTime;
-
     let filterComplex = '';
+for (let i = 0; i < numImages; i++) {
+  filterComplex += `[${i}]settb=AVTB[v${i}];`;
+}
 
-    for (let i = 0; i < numImages; i++) {
-      filterComplex += `[${i}]settb=AVTB[v${i}];`;
-    }
-
-    let xfadeFilters = '';
-
-    for (let i = 0; i < numImages - 1; i += 2) {
-      // 画像数 > 3かつ偶数の場合
-      if (images.length > 2 && images.length % 2 === 0) {   
-        xfadeFilters += `[v${i}][v${i + 1}]xfade=transition=fade:duration=${changeTime}:offset=${offsetTime}[v${i}${i + 1}];` 
-      if (i > 1 && i % 2 === 0) {
-        xfadeFilters += `[v${i - 2}${i - 1}][v${i}${i + 1}]xfade=transition=fade:duration=${changeTime}:offset=${offsetTime * (i + 1)};`;
-      }
-    }
-    // 画像が3枚の場合 
-    else if (images.length === 3) {
-      xfadeFilters += `[v${i}][v${i + 1}]xfade=transition=fade:duration=${changeTime}:offset=${offsetTime}[v01];[v01][v2]xfade=transition=fade:duration=${changeTime}:offset=${offsetTime};`;
-    }
-    // 画像が2枚の場合
-    else if (images.length === 2) {
-      xfadeFilters += `[v${i}][v${i + 1}]xfade=transition=fade:duration=${changeTime}:offset=${offsetTime},`;
-    }
+let xfadeFilters = '';
+for (let i = 0; i < numImages - 1; i += 2) {  
+  //画像数 > 3かつ偶数の場合
+  if (images.length > 2 && images.length % 2 === 0) {
+    if (i === images.length - 2) {
+      xfadeFilters += `[v${i}][v${i + 1}]xfade=transition=fade:duration=${speed / 1000}:offset=${autoplayDelay - (speed / 1000)}[v${i}${i + 1}];`;
+      
+      if (images.length > 3 && i % 2 === 0) {
+        xfadeFilters+= `[v${i - 2}${i - 1}][v${i}${i + 1}]xfade=transition=fade:duration=${speed / 1000}:offset=${autoplayDelay - (speed / 1000)};`;
+      } 
+    } else {
+      xfadeFilters += `[v${i}][v${i + 1}]xfade=transition=fade:duration=${speed / 1000}:offset=${autoplayDelay - (speed / 1000)}[v${i}${i + 1}];`;   
+    }  
   }
-  if (xfadeFilters.endsWith(';')) {
-    xfadeFilters = xfadeFilters.slice(0, -1) + ',';
+  //画像が3枚の場合 
+  else if (images.length === 3) {
+    xfadeFilters += `[v${i}][v${i + 1}]xfade=transition=fade:duration=${speed / 1000}:offset=${autoplayDelay - (speed / 1000)}[v01];[v01][v2]xfade=transition=fade:duration=${speed / 1000}:offset=${autoplayDelay - (speed / 1000)};`;
   }
-  filterComplex += xfadeFilters;
-  filterComplex += `scale=trunc(iw/2)*2:trunc(ih/2)*2[v]`;
-
-  let imageInputs = [];
-  for (let i = 0; i < numImages; i++) {
-    imageInputs.push('-loop', '1', '-t', `${autoplayDelay}`, '-i', `input_${i}.jpg`);
+  //画像が2枚の場合
+  else if (images.length === 2) {
+    xfadeFilters += `[v${i}][v${i + 1}]xfade=transition=fade:duration=${speed / 1000}:offset=${autoplayDelay - (speed / 1000)},`;
   }
+}
 
+if (xfadeFilters.endsWith(';')) {
+  xfadeFilters = xfadeFilters.slice(0, -1) + ',';
+}
+
+filterComplex += xfadeFilters;
+
+
+filterComplex += `scale=trunc(iw/2)*2:trunc(ih/2)*2[v]`;
+
+let imageInputs = [];
+for (let i = 0; i < numImages; i++) {
+  imageInputs.push('-loop', '1', '-t', `${autoplayDelay}`, '-i', `input_${i}.jpg`);
+}
 await ffmpeg.run(
   ...imageInputs,
   '-filter_complex', filterComplex,

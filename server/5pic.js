@@ -11,21 +11,18 @@ const bodyParser = require('body-parser');
 const app = express();
 const port = 4000;
 
-let autoplayDelay = 3;
+let autoplayDelay = 2;
 let speed = 1000;
 
 app.use(bodyParser.json());
 app.use(bodyParser.urlencoded({ extended: true }));
 app.use(express.static('./dist'));
 
-const ffmpeg = createFFmpeg(
-  { log: true }
-);
+const ffmpeg = createFFmpeg({ log: true });
 
 app.post('/slide/download', async (req, res) => {
   try {
-    const { images, numImages, autoplayDelay, speed } = req.body; // 画像の配列と画像の数、autoplayDelay、speedを取得
-
+    const images = req.body;
     await ffmpeg.load();
 
     const tempDir = path.join(__dirname, 'temp');
@@ -34,7 +31,7 @@ app.post('/slide/download', async (req, res) => {
     }
 
     const imagePaths = [];
-    for (let i = 0; i < numImages; i++) {
+    for (let i = 0; i < images.length; i++) {
       const image = images[i];
       const imagePath = path.join(tempDir, `image_${i}.jpg`);
       fs.writeFileSync(imagePath, image, 'base64');
@@ -46,57 +43,39 @@ app.post('/slide/download', async (req, res) => {
       data: fetchFile(imagePath),
     })));
 
-
-    const changeTime = speed / 1000;
-    const offsetTime = autoplayDelay - changeTime;
-
-    let filterComplex = '';
-
-    for (let i = 0; i < numImages; i++) {
-      filterComplex += `[${i}]settb=AVTB[v${i}];`;
-    }
-
-    let xfadeFilters = '';
-
-    for (let i = 0; i < numImages - 1; i += 2) {
-      // 画像数 > 3かつ偶数の場合
-      if (images.length > 2 && images.length % 2 === 0) {   
-        xfadeFilters += `[v${i}][v${i + 1}]xfade=transition=fade:duration=${changeTime}:offset=${offsetTime}[v${i}${i + 1}];` 
-      if (i > 1 && i % 2 === 0) {
-        xfadeFilters += `[v${i - 2}${i - 1}][v${i}${i + 1}]xfade=transition=fade:duration=${changeTime}:offset=${offsetTime * (i + 1)};`;
-      }
-    }
-    // 画像が3枚の場合 
-    else if (images.length === 3) {
-      xfadeFilters += `[v${i}][v${i + 1}]xfade=transition=fade:duration=${changeTime}:offset=${offsetTime}[v01];[v01][v2]xfade=transition=fade:duration=${changeTime}:offset=${offsetTime};`;
-    }
-    // 画像が2枚の場合
-    else if (images.length === 2) {
-      xfadeFilters += `[v${i}][v${i + 1}]xfade=transition=fade:duration=${changeTime}:offset=${offsetTime},`;
-    }
-  }
-  if (xfadeFilters.endsWith(';')) {
-    xfadeFilters = xfadeFilters.slice(0, -1) + ',';
-  }
-  filterComplex += xfadeFilters;
-  filterComplex += `scale=trunc(iw/2)*2:trunc(ih/2)*2[v]`;
-
-  let imageInputs = [];
-  for (let i = 0; i < numImages; i++) {
-    imageInputs.push('-loop', '1', '-t', `${autoplayDelay}`, '-i', `input_${i}.jpg`);
-  }
-
-await ffmpeg.run(
-  ...imageInputs,
-  '-filter_complex', filterComplex,
-  '-map', '[v]',
-  '-c:v', 'libx264',
-  '-pix_fmt', 'yuv420p',
-  '-s', '1340x670',
-  'output.mp4'
-);
-
     const outputFilePath = path.join(tempDir, 'output.mp4');
+    const pageSpeed = speed / 1000;
+
+    await ffmpeg.run(
+      '-loop','1',
+      '-t', `2`,
+      '-i', 'input_0.jpg',
+      '-loop','1',
+      '-t', `4`,            
+      '-i', 'input_1.jpg',
+      '-loop','1',
+      '-t', `6`,            
+      '-i', 'input_2.jpg',
+      '-loop','1',
+      '-t', `8`,            
+      '-i', 'input_3.jpg',
+      '-loop','1',
+      '-t', `10`,            
+      '-i', 'input_4.jpg',
+      '-filter_complex', 
+      `[0]settb=AVTB[v0];[1]settb=AVTB[v1];[2]settb=AVTB[v2];[3]settb=AVTB[v3];[4]settb=AVTB[v4];
+      [v0][v1]xfade=transition=fade:duration=${pageSpeed}:offset=${autoplayDelay - pageSpeed}[v01];
+      [v2][v3]xfade=transition=fade:duration=${pageSpeed}:offset=${autoplayDelay - pageSpeed}[v23];
+      [v01][v23]xfade=transition=fade:duration=${pageSpeed}:offset=${autoplayDelay - pageSpeed}[v0123];
+      [v0123][v4]xfade=transition=fade:duration=${pageSpeed}:offset=${autoplayDelay - pageSpeed},
+      scale=trunc(iw/2)*2:trunc(ih/2)*2[v]`,          
+      '-map', '[v]',       
+      '-c:v', 'libx264',
+      '-pix_fmt', 'yuv420p',
+      '-s', '1340x670',
+      'output.mp4'
+    );
+
     if (fs.existsSync(outputFilePath)) {
       const outputData = fs.readFileSync(outputFilePath);
       res.set('Content-Type', 'video/mp4');
@@ -113,15 +92,6 @@ await ffmpeg.run(
     res.status(500).json({ error: 'Failed to generate video' });
   }
 });
-/*
-if (images.length % 2 === 1){
-      xfadeFilters += `[v][v${i + 1}]xfade=transition=fade:duration=${speed / 1000}:offset=${autoplayDelay - (speed / 1000)}[v${i}${i + 1}],`;
-    }
-    else(images.length % 2 === 0) {
-      xfadeFilters += `[v01][v${images.length - 2}${images.length  - 1}]xfade=transition=fade:duration=${speed / 1000}:offset=${autoplayDelay - (speed / 1000)}[v${i}${i + 1}],`;
-    }
-*/
-
 app.post('/slide/updateSettings', (req, res) => {
   const { autoplayDelay: newAutoplayDelay, speed: newSpeed } = req.body;
   autoplayDelay = newAutoplayDelay;

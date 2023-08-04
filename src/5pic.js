@@ -23,7 +23,7 @@ const App = () => {
   const swiperRef = useRef(null);
   const [viewportHeight, setViewportHeight] = useState(0);
   const [autoplay, setAutoplay] = useState(true);
-  const [autoplayDelay, setAutoplayDelay] = useState(3);
+  const [autoplayDelay, setAutoplayDelay] = useState(2);
   const [speed, setSpeed] = useState(1000);
 
 
@@ -147,72 +147,46 @@ const App = () => {
         console.log(`Conversion progress: ${Math.round(ratio * 100)}%`);
       });
   
-
-      const numImages = capturedSlides.length;
-
-      for (let i = 0; i < numImages; i++) {
+      for (let i = 0; i < capturedSlides.length; i++) {
         const slide = capturedSlides[i];
         const imageData = await fetchFile(slide);
         ffmpeg.FS('writeFile', `input_${i}.jpg`, imageData);
       }
-
-      const changeTime = speed / 1000;
-      const offsetTime = autoplayDelay - changeTime;
-
-      let filterComplex = '';
-
-      for (let i = 0; i < numImages; i++) {
-        filterComplex += `[${i}]settb=AVTB[v${i}];`;
-      }
-
-      let xfadeFilters = '';
-
-      for (let i = 0; i < numImages - 1; i += 2) {
-        // 画像数 > 3かつ偶数の場合
-        if (images.length > 2 && images.length % 2 === 0) {   
-          xfadeFilters += `[v${i}][v${i + 1}]xfade=transition=fade:duration=${changeTime}:offset=${offsetTime}[v${i}${i + 1}];` 
-        if (i > 1 && i % 2 === 0) {
-          xfadeFilters += `[v${i - 2}${i - 1}][v${i}${i + 1}]xfade=transition=fade:duration=${changeTime}:offset=${offsetTime};`;
-        }
-      }
-      // 画像が3枚の場合 
-      else if (images.length === 3) {
-        xfadeFilters += `[v${i}][v${i + 1}]xfade=transition=fade:duration=${changeTime}:offset=${offsetTime}[v01];[v01][v2]xfade=transition=fade:duration=${changeTime}:offset=${offsetTime};`;
-      }
-      // 画像が2枚の場合
-      else if (images.length === 2) {
-        xfadeFilters += `[v${i}][v${i + 1}]xfade=transition=fade:duration=${changeTime}:offset=${offsetTime},`;
-      }
-    }
-    if (xfadeFilters.endsWith(';')) {
-      xfadeFilters = xfadeFilters.slice(0, -1) + ',';
-    }
-    filterComplex += xfadeFilters;
-    filterComplex += `scale=trunc(iw/2)*2:trunc(ih/2)*2[v]`;
-
-    let imageInputs = [];
-    for (let i = 0; i < numImages; i++) {
-      imageInputs.push('-loop', '1', '-t', `${autoplayDelay}`, '-i', `input_${i}.jpg`);
-    }
+  
+    /*const framerate = 1 / autoplayDelay;*/
+    const pageSpeed = speed / 1000;
+    
 
     await ffmpeg.run(
-      ...imageInputs,
-      '-filter_complex', filterComplex,
-      '-map', '[v]',
+      '-loop','1',
+      '-t', `2`,
+      '-i', 'input_0.jpg',
+      '-loop','1',
+      '-t', `4`,            
+      '-i', 'input_1.jpg',
+      '-loop','1',
+      '-t', `6`,            
+      '-i', 'input_2.jpg',
+      '-loop','1',
+      '-t', `8`,            
+      '-i', 'input_3.jpg',
+      '-loop','1',
+      '-t', `10`,            
+      '-i', 'input_4.jpg',
+      '-filter_complex', 
+      `[0]settb=AVTB[v0];[1]settb=AVTB[v1];[2]settb=AVTB[v2];[3]settb=AVTB[v3];[4]settb=AVTB[v4];
+      [v0][v1]xfade=transition=fade:duration=${pageSpeed}:offset=${autoplayDelay - pageSpeed}[v01];
+      [v2][v3]xfade=transition=fade:duration=${pageSpeed}:offset=${autoplayDelay - pageSpeed}[v23];
+      [v01][v23]xfade=transition=fade:duration=${pageSpeed}:offset=${autoplayDelay - pageSpeed}[v0123];
+      [v0123][v4]xfade=transition=fade:duration=${pageSpeed}:offset=${autoplayDelay - pageSpeed},
+      scale=trunc(iw/2)*2:trunc(ih/2)*2[v]`,          
+      '-map', '[v]',       
       '-c:v', 'libx264',
       '-pix_fmt', 'yuv420p',
       '-s', '1340x670',
       'output.mp4'
     );
-/*
-if (images.length % 2 === 1){
-      xfadeFilters += `[v][v${i + 1}]xfade=transition=fade:duration=${speed / 1000}:offset=${autoplayDelay - (speed / 1000)}[v${i}${i + 1}],`;
-    }
-    else(images.length % 2 === 0) {
-      xfadeFilters += `[v01][v${images.length - 2}${images.length  - 1}]xfade=transition=fade:duration=${speed / 1000}:offset=${autoplayDelay - (speed / 1000)}[v${i}${i + 1}],`;
-    }
-*/
-
+  
       const outputData = ffmpeg.FS('readFile', 'output.mp4');
       const url = URL.createObjectURL(new Blob([outputData.buffer], { type: 'video/mp4' }));
       const link = document.createElement('a');
@@ -229,6 +203,7 @@ if (images.length % 2 === 1){
       setIsConverting(false);
     }
   };
+
 
   useEffect(() => {
     const handleResize = () => {
