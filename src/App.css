@@ -1,45 +1,7 @@
-.App {
-  text-align: center;
-}
-
-.App-logo {
-  height: 40vmin;
-  pointer-events: none;
-}
-
-@media (prefers-reduced-motion: no-preference) {
-  .App-logo {
-    animation: App-logo-spin infinite 20s linear;
-  }
-}
-
-.App-header {
-  background-color: #282c34;
-  min-height: 100vh;
-  display: flex;
-  flex-direction: column;
-  align-items: center;
-  justify-content: center;
-  font-size: calc(10px + 2vmin);
-  color: white;
-}
-
-.App-link {
-  color: #61dafb;
-}
-
-@keyframes App-logo-spin {
-  from {
-    transform: rotate(0deg);
-  }
-  to {
-    transform: rotate(360deg);
-  }
-}
 .swiper-pagination-bullet {
-  top:50px !important;
+  
   background-color: #222 !important;
-  opacity: 0.6 !important;
+  opacity: 0.8 !important;
 }
 .swiper-pagination-bullet-active {
   background-color: aqua !important;
@@ -50,28 +12,50 @@
 .swiper-button-next {
   display: none !important;
 }
+
+.setting-menu {
+  display: flex;
+  flex-direction: row;
+  width: 95%;
+  margin-top: 15px;
+  padding: 0 2.5%;
+}
 .dropzone {
-  margin-bottom:20px;
-  width: 95%; 
+  text-align: center;
+  width: calc(50% - 6px);
+  padding: 0 1.5% 0 0;
   height: 150px; 
   border: 3px dashed black;
 }
 .dropzone p {
-  font-size:16px;
+  font-size:12px;
   text-align: center;
+  font-weight: bold;
+  margin-top: 65px;
 }
 .dropzone:hover {
   cursor: pointer;
+  background-color: #ccc;
 }
-h1 {
-  font-size:36px;
-}
+
 .settings {
-  font-size:20px;
+  font-size:15px;
   font-weight:bold;
+  padding: 0 2.5%;
 }
 .toggleplay {
   padding: 0;
   margin-left: 20px;
-  transform: scale(1.8);
+  transform: scale(1.5);
 }
+
+.handleAutoplayDelayChange {
+  width: 50px;
+}
+.handleSpeedChange {
+  width: 100px;
+}
+.btn-flex {
+  flex-direction: column;
+}
+
