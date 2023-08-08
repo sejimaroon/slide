@@ -52,11 +52,26 @@
 }
 .dropzone {
   margin-bottom:20px;
+  width: 95%; 
+  height: 150px; 
+  border: 3px dashed black;
 }
 .dropzone p {
-  font-size:12px;
+  font-size:16px;
   text-align: center;
 }
 .dropzone:hover {
   cursor: pointer;
+}
+h1 {
+  font-size:36px;
+}
+.settings {
+  font-size:20px;
+  font-weight:bold;
+}
+.toggleplay {
+  padding: 0;
+  margin-left: 20px;
+  transform: scale(1.8);
 }

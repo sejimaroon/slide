@@ -3,6 +3,9 @@
   "name": "slide",
   "version": "0.1.0",
   "private": true,
+  "engines": {
+    "node":">=20.0.0"
+  },
   "dependencies": {
     "@babel/core": "^7.22.9",
     "@babel/helper-compilation-targets": "^7.22.9",
@@ -33,7 +36,7 @@
     "react-scripts": "^5.0.1",
     "react-slick": "^0.29.0",
     "react-transition-group": "^4.4.5",
-    "sass": "^1.63.6",
+    "sass": "^1.64.2",
     "slick-carousel": "^1.8.1",
     "swiper": "^10.0.4",
     "web-vitals": "^2.1.4"

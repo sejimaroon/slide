@@ -13,13 +13,13 @@ import Compressor from 'compressorjs';
 import { createFFmpeg, fetchFile } from '@ffmpeg/ffmpeg';
 import axios from 'axios';
 
-const ffmpeg = createFFmpeg({ log: true });
+const ffmpeg = createFFmpeg();
 
 const App = () => {
   const [images, setImages] = useState([]);
   const [capturedImages, setCapturedImages] = useState([]);
   const [isConverting, setIsConverting] = useState(false);
-
+  const [isDownloading, setIsDownloading] = useState(false);
   const swiperRef = useRef(null);
   const [viewportHeight, setViewportHeight] = useState(0);
   const [autoplay, setAutoplay] = useState(true);
@@ -75,7 +75,10 @@ const App = () => {
       swiper.params.speed = speed >= 0 ? speed : 0;
 
       swiper.update();
-      swiper.autoplay.start();
+      
+      if (autoplay) {
+        swiper.autoplay.start();
+      }
 
       const requestBody = {
         autoPlayDelay: autoplayDelay,
@@ -136,18 +139,14 @@ const App = () => {
   };
 
   const handleDownload = async () => {
-    setIsConverting(true);
+    setIsDownloading(true);
   
     try {
       const capturedSlides = await captureSlides();
       setCapturedImages(capturedSlides);
   
       await ffmpeg.load();
-      ffmpeg.setProgress(({ ratio }) => {
-        console.log(`Conversion progress: ${Math.round(ratio * 100)}%`);
-      });
-  
-
+    
       const numImages = capturedSlides.length;
 
       for (let i = 0; i < numImages; i++) {
@@ -156,62 +155,58 @@ const App = () => {
         ffmpeg.FS('writeFile', `input_${i}.jpg`, imageData);
       }
 
-      const changeTime = speed / 1000;
-      const offsetTime = autoplayDelay - changeTime;
-
+      
       let filterComplex = '';
-
       for (let i = 0; i < numImages; i++) {
         filterComplex += `[${i}]settb=AVTB[v${i}];`;
       }
-
+      
       let xfadeFilters = '';
 
-      for (let i = 0; i < numImages - 1; i += 2) {
-        // 画像数 > 3かつ偶数の場合
-        if (images.length > 2 && images.length % 2 === 0) {   
-          xfadeFilters += `[v${i}][v${i + 1}]xfade=transition=fade:duration=${changeTime}:offset=${offsetTime}[v${i}${i + 1}];` 
-        if (i > 1 && i % 2 === 0) {
-          xfadeFilters += `[v${i - 2}${i - 1}][v${i}${i + 1}]xfade=transition=fade:duration=${changeTime}:offset=${offsetTime};`;
-        }
+      for (let i = 0; i < numImages - 1; i ++) {
+        const changeTime = speed / 1000;
+        const offsetTime = autoplayDelay * (i + 1) - changeTime * (i + 1);
+          
+          if (i === 0) {   
+            xfadeFilters += `[v${i}][v${i + 1}]xfade=transition=fade:duration=${changeTime}:offset=${offsetTime}[v${i}${i + 1}];`
+          }
+          else {
+            xfadeFilters += `[v${i - 1}${i}][v${i + 1}]xfade=transition=fade:duration=${changeTime}:offset=${offsetTime}[v${i}${i + 1}];`
+          }
       }
-      // 画像が3枚の場合 
-      else if (images.length === 3) {
-        xfadeFilters += `[v${i}][v${i + 1}]xfade=transition=fade:duration=${changeTime}:offset=${offsetTime}[v01];[v01][v2]xfade=transition=fade:duration=${changeTime}:offset=${offsetTime};`;
+      if (xfadeFilters.endsWith(';')) {
+        xfadeFilters = xfadeFilters.slice(0, -1)/* + ','*/;
       }
-      // 画像が2枚の場合
-      else if (images.length === 2) {
-        xfadeFilters += `[v${i}][v${i + 1}]xfade=transition=fade:duration=${changeTime}:offset=${offsetTime},`;
-      }
-    }
-    if (xfadeFilters.endsWith(';')) {
-      xfadeFilters = xfadeFilters.slice(0, -1) + ',';
-    }
+    
     filterComplex += xfadeFilters;
-    filterComplex += `scale=trunc(iw/2)*2:trunc(ih/2)*2[v]`;
+    /*filterComplex += `scale=trunc(iw/2)*2:trunc(ih/2)*2[v]`;*/
 
     let imageInputs = [];
     for (let i = 0; i < numImages; i++) {
       imageInputs.push('-loop', '1', '-t', `${autoplayDelay}`, '-i', `input_${i}.jpg`);
     }
-
-    await ffmpeg.run(
-      ...imageInputs,
-      '-filter_complex', filterComplex,
-      '-map', '[v]',
-      '-c:v', 'libx264',
-      '-pix_fmt', 'yuv420p',
-      '-s', '1340x670',
-      'output.mp4'
-    );
-/*
-if (images.length % 2 === 1){
-      xfadeFilters += `[v][v${i + 1}]xfade=transition=fade:duration=${speed / 1000}:offset=${autoplayDelay - (speed / 1000)}[v${i}${i + 1}],`;
+    if (numImages > 1) {
+      await ffmpeg.run(
+        ...imageInputs,
+        '-filter_complex', filterComplex,
+        '-map', `[v${images.length - 2}${images.length - 1}]`,
+        '-c:v', 'libx264',
+        '-pix_fmt', 'yuv420p',
+        '-s', '1340x670',
+        'output.mp4'
+      );
     }
-    else(images.length % 2 === 0) {
-      xfadeFilters += `[v01][v${images.length - 2}${images.length  - 1}]xfade=transition=fade:duration=${speed / 1000}:offset=${autoplayDelay - (speed / 1000)}[v${i}${i + 1}],`;
+    else {
+      await ffmpeg.run(
+        ...imageInputs,
+        '-filter_complex', filterComplex,
+        '-map', '[v]',
+        '-c:v', 'libx264',
+        '-pix_fmt', 'yuv420p',
+        '-s', '1340x670',
+        'output.mp4'
+      );
     }
-*/
 
       const outputData = ffmpeg.FS('readFile', 'output.mp4');
       const url = URL.createObjectURL(new Blob([outputData.buffer], { type: 'video/mp4' }));
@@ -223,10 +218,10 @@ if (images.length % 2 === 1){
       link.remove();
       URL.revokeObjectURL(url);
   
-      setIsConverting(false);
+      setIsDownloading(false);
     } catch (error) {
       console.error(error);
-      setIsConverting(false);
+      setIsDownloading(false);
     }
   };
 
@@ -246,13 +241,11 @@ if (images.length % 2 === 1){
 
   return (
     <section id="testimonials">
-      <div className="container" style={{ height: `${viewportHeight}px` }}>
-        <h1>App</h1>
+      <div className="container" style={{height: `${viewportHeight}px`, marginLeft:'2.5%', marginTop:'2.5%', color:'#333'}}>
         <Dropzone onDrop={handleDrop}>
           {({ getRootProps, getInputProps }) => (
             <div
               {...getRootProps()}
-              style={{ width: '90%', height: '100px', border: '1px dashed black', marginLeft: '5%' }}
               className="dropzone"
             >
               <input {...getInputProps()} />
@@ -263,35 +256,55 @@ if (images.length % 2 === 1){
         <div className="settings">
           <div>
             <label>
-              <input type="checkbox" checked={autoplay} onChange={toggleAutoplay} />
-              Autoplay
+              自動再生
+                <input type="checkbox" 
+                  checked={autoplay}
+                  onChange={toggleAutoplay} 
+                  className="toggleplay"
+                />
             </label>
           </div>
           <div>
             <label>
-              Autoplay Delay (seconds):
-              <input type="text" value={autoplayDelay} onChange={handleAutoplayDelayChange} />         
+              画像表示時間 :
+              <input type="text" value={autoplayDelay} onChange={handleAutoplayDelayChange} />
+              秒         
             </label>
           </div>
           <div>
             <label>
-              PageSpeed:
+              画像切り替わり時間
               <input type="text" value={speed} onChange={handleSpeedChange} />
               ミリ秒
             </label>
           </div>
-          <button onClick={handleApplySettings}>設定</button>
+          <button 
+            onClick={handleApplySettings}
+            className='setting-btn'
+          >
+              設定
+          </button>
         </div>
         {images.length > 0 && (
           <div>
-            <button onClick={handleConvert} disabled={isConverting}>
+            <button 
+              onClick={handleConvert} 
+              disabled={isConverting}
+              className='convert-btn'
+            >
               {isConverting ? '変換中...' : 'スライドショーに変換'}
             </button>
           </div>
         )}
         {capturedImages.length > 0 && (
           <div>
-            <button onClick={handleDownload}>スライドショーをダウンロード</button>
+            <button 
+              onClick={handleDownload}
+              disabled={isDownloading}
+              className='download-btn'
+            >
+              {isDownloading ? 'ダウンロード中...' : 'スライドショーをダウンロード'}
+            </button>
           </div>
         )}
         <Swiper
