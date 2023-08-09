@@ -13,6 +13,7 @@ const port = 4000;
 
 let autoplayDelay = 3;
 let speed = 1000;
+let transition = "slide";
 
 app.use(bodyParser.json());
 app.use(bodyParser.urlencoded({ extended: true }));
@@ -22,7 +23,7 @@ const ffmpeg = createFFmpeg({ log: true });
 
 app.post("/slide/download", async (req, res) => {
   try {
-    const { images, numImages, autoplayDelay, speed } = req.body; // 画像の配列と画像の数、autoplayDelay、speedを取得
+    const { images, numImages, autoplayDelay, speed, transition } = req.body; // 画像の配列と画像の数、autoplayDelay、speedを取得
 
     await ffmpeg.load();
 
@@ -62,13 +63,13 @@ app.post("/slide/download", async (req, res) => {
       if (i === 0) {
         xfadeFilters += `[v${i}][v${
           i + 1
-        }]xfade=transition=fade:duration=${changeTime}:offset=${offsetTime}[v${i}${
+        }]xfade=transition=:${transition}=duration=${changeTime}:offset=${offsetTime}[v${i}${
           i + 1
         }];`;
       } else {
         xfadeFilters += `[v${i - 1}${i}][v${
           i + 1
-        }]xfade=transition=fade:duration=${changeTime}:offset=${offsetTime}[v${i}${
+        }]xfade=transition=${transition}:duration=${changeTime}:offset=${offsetTime}[v${i}${
           i + 1
         }];`;
       }
@@ -152,15 +153,20 @@ if (images.length % 2 === 1){
 */
 
 app.post("/slide/updateSettings", (req, res) => {
-  const { autoplayDelay: newAutoplayDelay, speed: newSpeed } = req.body;
+  const {
+    autoplayDelay: newAutoplayDelay,
+    speed: newSpeed,
+    transition: newTransition,
+  } = req.body;
   autoplayDelay = newAutoplayDelay;
   speed = newSpeed;
+  transition = newTransition;
 
   res.send("Settings updated successfully.");
 });
 
 app.get("/slide/getSettings", (req, res) => {
-  res.json({ autoplayDelay, speed });
+  res.json({ autoplayDelay, speed, transition });
 });
 
 app.get("*", (req, res) => {

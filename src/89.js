@@ -33,6 +33,8 @@ const App = () => {
   const [autoplayDelay, setAutoplayDelay] = useState(3);
   const [speed, setSpeed] = useState(1000);
 
+  const [trans, setTrans] = useState();
+
   const handleDrop = async (acceptedFiles) => {
     const compressedImages = [];
 
@@ -72,7 +74,10 @@ const App = () => {
     const newSpeed = parseInt(event.target.value);
     setSpeed(newSpeed >= 0 ? newSpeed : 0);
   };
-
+  const selectTransChange = (event) => {
+    const newTrans = event.target.value;
+    setTrans(newTrans);
+  };
   const handleApplySettings = () => {
     if (swiperRef.current) {
       const swiper = swiperRef.current.swiper;
@@ -80,12 +85,14 @@ const App = () => {
         ? { delay: autoplayDelay * 1000 }
         : false;
       swiper.params.speed = speed >= 0 ? speed : 0;
-
+      swiper.params.transition = trans;
+      swiper.params.effect = trans;
       swiper.update();
 
       const requestBody = {
         autoPlayDelay: autoplayDelay,
         speed: speed,
+        trans: trans,
       };
 
       axios
@@ -175,13 +182,13 @@ const App = () => {
         if (i === 0) {
           xfadeFilters += `[v${i}][v${
             i + 1
-          }]xfade=transition=fade:duration=${changeTime}:offset=${offsetTime}[v${i}${
+          }]xfade=transition=${trans}:duration=${changeTime}:offset=${offsetTime}[v${i}${
             i + 1
           }];`;
         } else {
           xfadeFilters += `[v${i - 1}${i}][v${
             i + 1
-          }]xfade=transition=fade:duration=${changeTime}:offset=${offsetTime}[v${i}${
+          }]xfade=transition=${trans}:duration=${changeTime}:offset=${offsetTime}[v${i}${
             i + 1
           }];`;
         }
@@ -293,7 +300,7 @@ const App = () => {
           pagination={{ clickable: true }}
           autoplay={autoplay ? { delay: speed } : false}
           speed={speed}
-          effect="fade"
+          effect={trans}
           fadeEffect={{
             crossFade: true,
           }}
@@ -354,13 +361,24 @@ const App = () => {
                 />
                 ミリ秒
               </label>
+              <div>
+                <div>
+                  <label>
+                    エフェクト:
+                    <select value={trans} onChange={selectTransChange}>
+                      <option value="slide">slide</option>
+                      <option value="fade">fade</option>
+                    </select>
+                  </label>
+                </div>
+              </div>
             </div>
             <div className="btn-flex">
               <button onClick={handleApplySettings} className="setting-btn">
                 設定
               </button>
             </div>
-            {images.length > 0 && (
+            {images.length > 1 && (
               <div>
                 <button
                   onClick={handleConvert}
