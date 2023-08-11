@@ -13,6 +13,7 @@ const port = 4000;
 
 let autoplayDelay = 3;
 let speed = 1000;
+let effect = "slide";
 
 app.use(bodyParser.json());
 app.use(bodyParser.urlencoded({ extended: true }));
@@ -20,9 +21,18 @@ app.use(express.static("./dist"));
 
 const ffmpeg = createFFmpeg({ log: true });
 
+app.post("/slide/updateSettings", (req, res) => {
+  const { autoplayDelay: newAutoplayDelay, speed: newSpeed, effect: newEffect } = req.body;
+  autoplayDelay = newAutoplayDelay;
+  speed = newSpeed;
+  effect = newEffect;
+
+  res.send("Settings updated successfully.");
+});
+
 app.post("/slide/download", async (req, res) => {
   try {
-    const { images, numImages, autoplayDelay, speed } = req.body; // 画像の配列と画像の数、autoplayDelay、speedを取得
+    const { images, numImages, autoplayDelay, speed, effect } = req.body; 
 
     await ffmpeg.load();
 
@@ -60,17 +70,9 @@ app.post("/slide/download", async (req, res) => {
       const offsetTime = autoplayDelay * (i + 1);
 
       if (i === 0) {
-        xfadeFilters += `[v${i}][v${
-          i + 1
-        }]xfade=transition=fade:duration=${changeTime}:offset=${offsetTime}[v${i}${
-          i + 1
-        }];`;
+        xfadeFilters += `[v${i}][v${i + 1}]xfade=transition=${effect}=duration=${changeTime}:offset=${offsetTime}[v${i}${i + 1}];`;
       } else {
-        xfadeFilters += `[v${i - 1}${i}][v${
-          i + 1
-        }]xfade=transition=fade:duration=${changeTime}:offset=${offsetTime}[v${i}${
-          i + 1
-        }];`;
+        xfadeFilters += `[v${i - 1}${i}][v${i + 1}]xfade=transition=${effect}:duration=${changeTime}:offset=${offsetTime}[v${i}${i + 1}];`;
       }
     }
     if (xfadeFilters.endsWith(";")) {
@@ -85,43 +87,30 @@ app.post("/slide/download", async (req, res) => {
     let imageInputs = [];
     for (let i = 0; i < numImages; i++) {
       imageInputs.push(
-        "-loop",
-        "1",
-        "-t",
-        `${autoplayDelay + speed / 1000}`,
-        "-i",
-        `input_${i}.jpg`
+        "-loop", "1",
+        "-t", `${autoplayDelay + speed / 1000}`,
+        "-i", `input_${i}.jpg`
       );
     }
 
     if (numImages > 1) {
       await ffmpeg.run(
         ...imageInputs,
-        "-filter_complex",
-        filterComplex,
-        "-map",
-        `[v${images.length - 2}${images.length - 1}]`,
-        "-c:v",
-        "libx264",
-        "-pix_fmt",
-        "yuv420p",
-        "-s",
-        "1340x670",
+        "-filter_complex", filterComplex,
+        "-map", `[v${images.length - 2}${images.length - 1}]`,
+        "-c:v", "libx264",
+        "-pix_fmt", "yuv420p",
+        "-s", "1340x670",
         "output.mp4"
       );
     } else {
       await ffmpeg.run(
         ...imageInputs,
-        "-filter_complex",
-        filterComplex,
-        "-map",
-        "[v]",
-        "-c:v",
-        "libx264",
-        "-pix_fmt",
-        "yuv420p",
-        "-s",
-        "1340x670",
+        "-filter_complex", filterComplex,
+        "-map", "[v]",
+        "-c:v", "libx264",
+        "-pix_fmt", "yuv420p",
+        "-s", "1340x670",
         "output.mp4"
       );
     }
@@ -142,25 +131,11 @@ app.post("/slide/download", async (req, res) => {
     res.status(500).json({ error: "Failed to generate video" });
   }
 });
-/*
-if (images.length % 2 === 1){
-      xfadeFilters += `[v][v${i + 1}]xfade=transition=fade:duration=${speed / 1000}:offset=${autoplayDelay - (speed / 1000)}[v${i}${i + 1}],`;
-    }
-    else(images.length % 2 === 0) {
-      xfadeFilters += `[v01][v${images.length - 2}${images.length  - 1}]xfade=transition=fade:duration=${speed / 1000}:offset=${autoplayDelay - (speed / 1000)}[v${i}${i + 1}],`;
-    }
-*/
 
-app.post("/slide/updateSettings", (req, res) => {
-  const { autoplayDelay: newAutoplayDelay, speed: newSpeed } = req.body;
-  autoplayDelay = newAutoplayDelay;
-  speed = newSpeed;
 
-  res.send("Settings updated successfully.");
-});
 
 app.get("/slide/getSettings", (req, res) => {
-  res.json({ autoplayDelay, speed });
+  res.json({ autoplayDelay, speed, effect });
 });
 
 app.get("*", (req, res) => {

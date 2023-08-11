@@ -1,12 +1,5 @@
 import React, { useState, useRef, useEffect } from "react";
-import {
-  Navigation,
-  Pagination,
-  Scrollbar,
-  A11y,
-  Autoplay,
-  EffectFade,
-} from "swiper/modules";
+import {Navigation,Pagination,Scrollbar,A11y,Autoplay,EffectFade} from "swiper/modules";
 import { Swiper, SwiperSlide } from "swiper/react";
 import "./App.css";
 import "swiper/css";
@@ -32,6 +25,7 @@ const App = () => {
   const [autoplay, setAutoplay] = useState(true);
   const [autoplayDelay, setAutoplayDelay] = useState(3);
   const [speed, setSpeed] = useState(1000);
+  const [effect, setEffect] = useState("");
 
   const handleDrop = async (acceptedFiles) => {
     const compressedImages = [];
@@ -72,27 +66,30 @@ const App = () => {
     const newSpeed = parseInt(event.target.value);
     setSpeed(newSpeed >= 0 ? newSpeed : 0);
   };
+  const handleEffectChange = (event) => {
+    const newEffect = event.target.value;
+    setEffect(newEffect);
+    console.log(newEffect);
+  };
 
   const handleApplySettings = () => {
     if (swiperRef.current) {
       const swiper = swiperRef.current.swiper;
-      swiper.params.autoplay = autoplay
-        ? { delay: autoplayDelay * 1000 }
-        : false;
+      swiper.params.autoplay = autoplay ? { delay: autoplayDelay * 1000 }: false;
       swiper.params.speed = speed >= 0 ? speed : 0;
-
+      swiper.params.effect = effect;
       swiper.update();
 
       const requestBody = {
         autoPlayDelay: autoplayDelay,
         speed: speed,
+        effect: effect,
       };
 
       axios
         .post("/slide/updateSettings", requestBody)
         .then((response) => {
           console.log(response.data);
-          swiper.autoplay.start();
         })
         .catch((error) => {
           console.error(error);
@@ -101,8 +98,8 @@ const App = () => {
   };
 
   const captureSlide = async (slide) => {
-    const canvas = document.createElement("canvas");
-    const ctx = canvas.getContext("2d");
+    const canvas = document.createElement('canvas');
+    const ctx = canvas.getContext('2d');
     canvas.width = slide.offsetWidth;
     canvas.height = slide.offsetHeight;
 
@@ -110,7 +107,7 @@ const App = () => {
       const image = new Image();
       image.onload = () => {
         ctx.drawImage(image, 0, 0, slide.offsetWidth, slide.offsetHeight);
-        resolve(canvas.toDataURL("image/jpeg", 1.0));
+        resolve(canvas.toDataURL('image/jpeg', 1.0));
       };
       image.src = slide.children[0].src;
     });
@@ -118,8 +115,7 @@ const App = () => {
 
   const captureSlides = async () => {
     const swiper = swiperRef.current.swiper;
-    const slideElements =
-      swiper.el.children[0].querySelectorAll(".swiper-slide");
+    const slideElements = swiper.el.children[0].querySelectorAll('.swiper-slide');
 
     const capturedSlides = [];
 
@@ -130,6 +126,7 @@ const App = () => {
 
     return capturedSlides;
   };
+
 
   const handleConvert = async () => {
     setIsConverting(true);
@@ -143,7 +140,7 @@ const App = () => {
       setIsConverting(false);
     }
   };
-
+  
   const handleDownload = async () => {
     setIsDownloading(true);
 
@@ -173,69 +170,46 @@ const App = () => {
         const offsetTime = autoplayDelay * (i + 1);
 
         if (i === 0) {
-          xfadeFilters += `[v${i}][v${
-            i + 1
-          }]xfade=transition=fade:duration=${changeTime}:offset=${offsetTime}[v${i}${
-            i + 1
-          }];`;
+          xfadeFilters += `[v${i}][v${i + 1}]xfade=transition=${effect}:duration=${changeTime}:offset=${offsetTime}[v${i}${i + 1}];`;
         } else {
-          xfadeFilters += `[v${i - 1}${i}][v${
-            i + 1
-          }]xfade=transition=fade:duration=${changeTime}:offset=${offsetTime}[v${i}${
-            i + 1
-          }];`;
+          xfadeFilters += `[v${i - 1}${i}][v${i + 1}]xfade=transition=${effect}:duration=${changeTime}:offset=${offsetTime}[v${i}${i + 1}];`;
         }
       }
       if (xfadeFilters.endsWith(";")) {
-        xfadeFilters = xfadeFilters.slice(0, -1) /* + ','*/;
+        xfadeFilters = xfadeFilters.slice(0, -1);
       }
 
       filterComplex += xfadeFilters;
-      /*filterComplex += `scale=trunc(iw/2)*2:trunc(ih/2)*2[v]`;*/
 
       let imageInputs = [];
       for (let i = 0; i < numImages; i++) {
         imageInputs.push(
-          "-loop",
-          "1",
-          "-t",
-          `${autoplayDelay + speed / 1000}`,
-          "-i",
-          `input_${i}.jpg`
+          "-loop", "1",
+          "-t", `${autoplayDelay + speed / 1000}`,
+          "-i", `input_${i}.jpg`
         );
       }
       if (numImages > 1) {
         await ffmpeg.run(
           ...imageInputs,
-          "-filter_complex",
-          filterComplex,
-          "-map",
-          `[v${images.length - 2}${images.length - 1}]`,
-          "-c:v",
-          "libx264",
-          "-pix_fmt",
-          "yuv420p",
-          "-s",
-          "1340x670",
+          "-filter_complex", filterComplex,
+          "-map", `[v${images.length - 2}${images.length - 1}]`,
+          "-c:v", "libx264",
+          "-pix_fmt", "yuv420p",
+          "-s", "1340x670",
           "output.mp4"
         );
-      } else {
+     } else {
         await ffmpeg.run(
-          ...imageInputs,
-          "-filter_complex",
-          filterComplex,
-          "-map",
-          "[v]",
-          "-c:v",
-          "libx264",
-          "-pix_fmt",
-          "yuv420p",
-          "-s",
-          "1340x670",
+          ...imageInputs, 
+          "-filter_complex",filterComplex, 
+          "-map", "[v]",
+          "-c:v", "libx264",
+          "-pix_fmt", "yuv420p",
+          "-s", "1340x670",
           "output.mp4"
         );
       }
-
       const outputData = ffmpeg.FS("readFile", "output.mp4");
       const url = URL.createObjectURL(
         new Blob([outputData.buffer], { type: "video/mp4" })
@@ -273,117 +247,121 @@ const App = () => {
     <section id="testimonials">
       <div
         className="container"
-        style={{ height: `${viewportHeight - 180}px`, color: "#333" }}
+        style={{ height: `${viewportHeight}px`, color: "#333" }}
       >
-        <Swiper
-          ref={swiperRef}
-          grabCursor={true}
-          modules={[
-            Navigation,
-            Pagination,
-            Scrollbar,
-            A11y,
-            Autoplay,
-            EffectFade,
-          ]}
-          slidesPerView={1}
-          spaceBetween={30}
-          navigation={true}
-          loop={true}
-          pagination={{ clickable: true }}
-          autoplay={autoplay ? { delay: speed } : false}
-          speed={speed}
-          effect="fade"
-          fadeEffect={{
-            crossFade: true,
-          }}
-        >
-          {images.map((image, index) => (
-            <SwiperSlide key={index}>
-              <div className="image-container">
-                <img
-                  src={URL.createObjectURL(image.file)}
-                  alt=""
-                  style={{ width: "100%" }}
-                />
-              </div>
-            </SwiperSlide>
-          ))}
-        </Swiper>
-        <div className="setting-menu">
-          <Dropzone onDrop={handleDrop}>
-            {({ getRootProps, getInputProps }) => (
-              <div {...getRootProps()} className="dropzone">
-                <input {...getInputProps()} />
-                <p>クリックして画像をドロップ</p>
-              </div>
-            )}
-          </Dropzone>
-          <div className="settings">
+        <Dropzone onDrop={handleDrop}>
+          {({ getRootProps, getInputProps }) => (
+            <div {...getRootProps()} className="dropzone">
+              <input {...getInputProps()} />
+              <p>クリックして画像をドロップ</p>
+            </div>
+          )}
+        </Dropzone>
+        <div className="settings">
+          <div>
+            <label>
+              画像表示時間:　 
+              <input
+                type="text"
+                value={autoplayDelay}
+                className="handleAutoplayDelayChange"
+                onChange={handleAutoplayDelayChange}
+              />
+              秒
+            </label>
+          </div>
+          <div>
+            <label>
+              スライド時間:　 
+              <input
+                type="text"
+                value={speed}
+                className="handleSpeedChange"
+                onChange={handleSpeedChange}
+              />
+              ミリ秒
+            </label>
+          </div>
+          <div>
             <div>
               <label>
-                自動再生
-                <input
-                  type="checkbox"
-                  checked={autoplay}
-                  onChange={toggleAutoplay}
-                  className="toggleplay"
-                />
+                エフェクト :　  
+                <select onChange={handleEffectChange}>
+                <option value="">以下から選択してください</option>
+                  <option value="slide">slide</option>
+                  <option value="fade">fade</option>
+                </select>
               </label>
             </div>
             <div>
-              <label>
-                画像表示時間 :
-                <input
-                  type="text"
-                  value={autoplayDelay}
-                  className="handleAutoplayDelayChange"
-                  onChange={handleAutoplayDelayChange}
-                />
-                秒
-              </label>
-            </div>
+            <label>
+              自動再生
+              <input
+                type="checkbox"
+                checked={autoplay}
+                onChange={toggleAutoplay}
+                className="toggleplay"
+              />
+            </label>
+          </div>
+          </div>
+          <div>
+            <button onClick={handleApplySettings} className="setting-btn">
+              プレビュー
+            </button>
+          </div>
+          
+          {images.length > 1 && (
             <div>
-              <label>
-                画像切り替わり時間
-                <input
-                  type="text"
-                  value={speed}
-                  className="handleSpeedChange"
-                  onChange={handleSpeedChange}
-                />
-                ミリ秒
-              </label>
-            </div>
-            <div className="btn-flex">
-              <button onClick={handleApplySettings} className="setting-btn">
-                設定
+              <button
+                onClick={handleConvert}
+                disabled={isConverting}
+                className="convert-btn"
+              >
+                {isConverting ? "作成中..." : "スライドショーデータを作成"}
               </button>
             </div>
-            {images.length > 0 && (
-              <div>
-                <button
-                  onClick={handleConvert}
-                  disabled={isConverting}
-                  className="convert-btn"
-                >
-                  {isConverting ? "変換中..." : "スライドショーに変換"}
-                </button>
-              </div>
-            )}
-            {capturedImages.length > 0 && (
+          )}
+          {capturedImages.length > 0 && (
               <div>
                 <button
                   onClick={handleDownload}
                   disabled={isDownloading}
                   className="download-btn"
                 >
-                  {isDownloading ? "ダウンロード中..." : "ダウンロード"}
+                {isDownloading ? "ダウンロード中..." : "ダウンロード"}
                 </button>
               </div>
-            )}
+             )}
           </div>
-        </div>
+          <Swiper
+            key={effect}
+            ref={swiperRef}
+            grabCursor={true}
+            modules={[Navigation,Pagination,Scrollbar,A11y,Autoplay,EffectFade,]}
+            slidesPerView={1}
+            navigation={true}
+            loop={true}
+            pagination={{ clickable: true }}
+            autoplay={autoplay ? { delay: speed } : false}
+            speed={speed}
+            effect={effect}
+            fadeEffect={{
+              crossFade: true,
+            }}
+          >
+          {images.map((image, index) => (
+            <SwiperSlide key={index}>
+              <div className="image-container">
+                <img
+                  src={URL.createObjectURL(image.file)}
+                  alt=""
+                  style={{ width: "100%"}}
+                />
+              </div>
+            </SwiperSlide>
+          ))}
+        </Swiper>
       </div>
     </section>
   );
