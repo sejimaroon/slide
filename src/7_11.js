@@ -23,9 +23,8 @@ const App = () => {
   const swiperRef = useRef(null);
   const [viewportHeight, setViewportHeight] = useState(0);
   const [autoplay, setAutoplay] = useState(true);
-  const [autoplayDelay, setAutoplayDelay] = useState(3);
   const [speed, setSpeed] = useState(1000);
-
+  const [autoplayDelay, setAutoplayDelay] = useState(2);
 
   const handleDrop = async (acceptedFiles) => {
     const compressedImages = [];
@@ -58,13 +57,15 @@ const App = () => {
   const toggleAutoplay = () => {
     setAutoplay((prevAutoplay) => !prevAutoplay);
   };
-  const handleAutoplayDelayChange = (event) => {
-    const newDelay = parseInt(event.target.value);
-    setAutoplayDelay(newDelay >= 0 ? newDelay : 0);
-  };
+
   const handleSpeedChange = (event) => {
     const newSpeed = parseInt(event.target.value);
     setSpeed(newSpeed >= 0 ? newSpeed : 0);
+  };
+
+  const handleAutoplayDelayChange = (event) => {
+    const newDelay = parseInt(event.target.value);
+    setAutoplayDelay(newDelay >= 0 ? newDelay : 0);
   };
 
   const handleApplySettings = () => {
@@ -77,10 +78,10 @@ const App = () => {
       swiper.autoplay.start();
 
       const requestBody = {
-        autoPlayDelay: autoplayDelay,
-        speed: speed,
+        autoplayDelay: autoplayDelay,
+        speed: speed
       };
-  
+
       axios.post('/slide/updateSettings', requestBody)
         .then(response => {
           console.log(response.data);
@@ -139,75 +140,31 @@ const App = () => {
   
     try {
       const capturedSlides = await captureSlides();
-      setCapturedImages(capturedSlides);
+      const capturedImageURLs = capturedSlides.map((slide) => slide.url); // 画像のURLの配列を取得
   
+      // Convert captured images to video using ffmpeg
       await ffmpeg.load();
       ffmpeg.setProgress(({ ratio }) => {
         console.log(`Conversion progress: ${Math.round(ratio * 100)}%`);
       });
   
-      const numImages = capturedSlides.length;
-
-      for (let i = 0; i < numImages; i++) {
-        const slide = capturedSlides[i];
-        const imageData = await fetchFile(slide);
+      for (let i = 0; i < capturedImageURLs.length; i++) {
+        const slideURL = capturedImageURLs[i];
+        const imageData = await fetchFile(slideURL);
         ffmpeg.FS('writeFile', `input_${i}.jpg`, imageData);
       }
-
-      let filterComplex = "";
-      for (let i = 0; i < numImages; i++) {
-        filterComplex += `[${i}]settb=AVTB[v${i}];`;
-      }
-
-      let xfadeFilters = "";
-
-      for (let i = 0; i < numImages - 1; i++) {
-        const changeTime = speed / 1000;
-        const offsetTime = autoplayDelay * (i + 1);
-
-        if (i === 0) {
-          xfadeFilters += `[v${i}][v${i + 1}]xfade=transition=fade:duration=${changeTime}:offset=${offsetTime}[v${i}${i + 1}];`;
-        } else {
-          xfadeFilters += `[v${i - 1}${i}][v${i + 1}]xfade=transition=fade:duration=${changeTime}:offset=${offsetTime}[v${i}${i + 1}];`;
-        }
-      }
-      if (xfadeFilters.endsWith(";")) {
-        xfadeFilters = xfadeFilters.slice(0, -1) /* + ','*/;
-      }
-
-      filterComplex += xfadeFilters;
-      /*filterComplex += `scale=trunc(iw/2)*2:trunc(ih/2)*2[v]`;*/
-
-      let imageInputs = [];
-      for (let i = 0; i < numImages; i++) {
-        imageInputs.push(
-          "-loop","1",
-          "-t",`${autoplayDelay + speed / 1000}`,
-          "-i",`input_${i}.jpg`
-        );
-      }
-      if (numImages > 1) {
-        await ffmpeg.run(
-          ...imageInputs,
-          "-filter_complex",filterComplex,
-          "-map",`[v${images.length - 2}${images.length - 1}]`,
-          "-c:v","libx264",
-          "-pix_fmt","yuv420p",
-          "-s","1340x670",
-          "output.mp4"
-        );
-      } else {
-        await ffmpeg.run(
-          ...imageInputs,
-          "-filter_complex",filterComplex,
-          "-map","[v]",
-          "-c:v","libx264",
-          "-pix_fmt","yuv420p",
-          "-s","1340x670",
-          "output.mp4"
-        );
-      }
-
+  
+      await ffmpeg.run(
+        '-framerate', '1',
+        '-i', 'input_%d.jpg',
+        '-vf', 'scale=trunc(iw/2)*2:trunc(ih/2)*2,fade=t=in:st=0:d=0.5:alpha=1,fade=t=out:st=1.5:d=0.5:alpha=1', // フェードのアニメーションを適用
+        '-c:v', 'libx264',
+        '-pix_fmt', 'yuv420p',
+        '-s', '1340x670',
+        '-t', `${autoplayDelay * speed}`,
+        'output.mp4'
+      );
+  
       const outputData = ffmpeg.FS('readFile', 'output.mp4');
       const url = URL.createObjectURL(new Blob([outputData.buffer], { type: 'video/mp4' }));
       const link = document.createElement('a');
@@ -224,18 +181,19 @@ const App = () => {
       setIsConverting(false);
     }
   };
+  
 
   useEffect(() => {
     const handleResize = () => {
       setViewportHeight(window.innerHeight);
     };
 
-    handleResize(); 
+    handleResize(); // 初回のレンダリング時に実行
 
-    window.addEventListener('resize', handleResize); 
+    window.addEventListener('resize', handleResize); // ウィンンドウのリサイズイベントを監視
 
     return () => {
-      window.removeEventListener('resize', handleResize); 
+      window.removeEventListener('resize', handleResize); // コンポーネントがアンマウントされた時にイベントリスナーを削除
     };
   }, []);
 
@@ -265,7 +223,7 @@ const App = () => {
           <div>
             <label>
               Autoplay Delay (seconds):
-              <input type="text" value={autoplayDelay} onChange={handleAutoplayDelayChange} />         
+              <input type="text" value={autoplayDelay} onChange={handleAutoplayDelayChange} />
             </label>
           </div>
           <div>
@@ -275,6 +233,7 @@ const App = () => {
               ミリ秒
             </label>
           </div>
+          
           <button onClick={handleApplySettings}>設定</button>
         </div>
         {images.length > 0 && (

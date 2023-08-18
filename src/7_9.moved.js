@@ -1,5 +1,5 @@
 import React, { useState, useRef, useEffect } from 'react';
-import { Navigation, Pagination, Scrollbar, A11y, Autoplay, EffectFade} from 'swiper/modules';
+import { Navigation, Pagination, Scrollbar, A11y, Autoplay, EffectFade, EffectCube, EffectCoverflow, EffectFlip } from 'swiper/modules';
 import { Swiper, SwiperSlide } from 'swiper/react';
 import './App.css';
 import 'swiper/css';
@@ -7,11 +7,12 @@ import 'swiper/css/navigation';
 import 'swiper/css/pagination';
 import 'swiper/css/scrollbar';
 import 'swiper/css/effect-fade';
-
+import 'swiper/css/effect-cube';
+import 'swiper/css/effect-coverflow';
+import 'swiper/css/effect-flip';
 import Dropzone from 'react-dropzone';
 import Compressor from 'compressorjs';
 import { createFFmpeg, fetchFile } from '@ffmpeg/ffmpeg';
-import axios from 'axios';
 
 const ffmpeg = createFFmpeg({ log: true });
 
@@ -23,9 +24,9 @@ const App = () => {
   const swiperRef = useRef(null);
   const [viewportHeight, setViewportHeight] = useState(0);
   const [autoplay, setAutoplay] = useState(true);
-  const [autoplayDelay, setAutoplayDelay] = useState(3);
   const [speed, setSpeed] = useState(1000);
-
+  const [effect, setEffect] = useState('default');
+  const [autoplayDelay, setAutoplayDelay] = useState(2);
 
   const handleDrop = async (acceptedFiles) => {
     const compressedImages = [];
@@ -58,13 +59,26 @@ const App = () => {
   const toggleAutoplay = () => {
     setAutoplay((prevAutoplay) => !prevAutoplay);
   };
+
+  const handleSpeedChange = (event) => {
+    const newSpeed = parseInt(event.target.value);
+    setSpeed(newSpeed >= 0 ? newSpeed : 0);
+  };
+
   const handleAutoplayDelayChange = (event) => {
     const newDelay = parseInt(event.target.value);
     setAutoplayDelay(newDelay >= 0 ? newDelay : 0);
   };
-  const handleSpeedChange = (event) => {
-    const newSpeed = parseInt(event.target.value);
-    setSpeed(newSpeed >= 0 ? newSpeed : 0);
+
+  const handleEffectChange = (event) => {
+    const newEffect = event.target.value;
+    setEffect(newEffect);
+    console.log(newEffect);
+    if (swiperRef.current) {
+      const swiper = swiperRef.current.swiper;
+      swiper.params.effect = newEffect;
+      swiper.update();
+    }
   };
 
   const handleApplySettings = () => {
@@ -72,22 +86,9 @@ const App = () => {
       const swiper = swiperRef.current.swiper;
       swiper.params.autoplay = autoplay ? { delay: autoplayDelay * 1000 } : false;
       swiper.params.speed = speed >= 0 ? speed : 0;
-
+      swiper.params.effect = effect;
       swiper.update();
       swiper.autoplay.start();
-
-      const requestBody = {
-        autoPlayDelay: autoplayDelay,
-        speed: speed,
-      };
-  
-      axios.post('/slide/updateSettings', requestBody)
-        .then(response => {
-          console.log(response.data);
-        })
-        .catch(error => {
-          console.error(error);
-        });
     }
   };
 
@@ -136,77 +137,32 @@ const App = () => {
 
   const handleDownload = async () => {
     setIsConverting(true);
-  
+
     try {
       const capturedSlides = await captureSlides();
       setCapturedImages(capturedSlides);
-  
+
+      // Convert captured images to video using ffmpeg
       await ffmpeg.load();
       ffmpeg.setProgress(({ ratio }) => {
         console.log(`Conversion progress: ${Math.round(ratio * 100)}%`);
       });
-  
-      const numImages = capturedSlides.length;
 
-      for (let i = 0; i < numImages; i++) {
+      for (let i = 0; i < capturedSlides.length; i++) {
         const slide = capturedSlides[i];
         const imageData = await fetchFile(slide);
         ffmpeg.FS('writeFile', `input_${i}.jpg`, imageData);
       }
 
-      let filterComplex = "";
-      for (let i = 0; i < numImages; i++) {
-        filterComplex += `[${i}]settb=AVTB[v${i}];`;
-      }
-
-      let xfadeFilters = "";
-
-      for (let i = 0; i < numImages - 1; i++) {
-        const changeTime = speed / 1000;
-        const offsetTime = autoplayDelay * (i + 1);
-
-        if (i === 0) {
-          xfadeFilters += `[v${i}][v${i + 1}]xfade=transition=fade:duration=${changeTime}:offset=${offsetTime}[v${i}${i + 1}];`;
-        } else {
-          xfadeFilters += `[v${i - 1}${i}][v${i + 1}]xfade=transition=fade:duration=${changeTime}:offset=${offsetTime}[v${i}${i + 1}];`;
-        }
-      }
-      if (xfadeFilters.endsWith(";")) {
-        xfadeFilters = xfadeFilters.slice(0, -1) /* + ','*/;
-      }
-
-      filterComplex += xfadeFilters;
-      /*filterComplex += `scale=trunc(iw/2)*2:trunc(ih/2)*2[v]`;*/
-
-      let imageInputs = [];
-      for (let i = 0; i < numImages; i++) {
-        imageInputs.push(
-          "-loop","1",
-          "-t",`${autoplayDelay + speed / 1000}`,
-          "-i",`input_${i}.jpg`
-        );
-      }
-      if (numImages > 1) {
-        await ffmpeg.run(
-          ...imageInputs,
-          "-filter_complex",filterComplex,
-          "-map",`[v${images.length - 2}${images.length - 1}]`,
-          "-c:v","libx264",
-          "-pix_fmt","yuv420p",
-          "-s","1340x670",
-          "output.mp4"
-        );
-      } else {
-        await ffmpeg.run(
-          ...imageInputs,
-          "-filter_complex",filterComplex,
-          "-map","[v]",
-          "-c:v","libx264",
-          "-pix_fmt","yuv420p",
-          "-s","1340x670",
-          "output.mp4"
-        );
-      }
+      await ffmpeg.run(
+        '-framerate', '1',
+        '-i', 'input_%d.jpg',
+        '-vf', 'scale=trunc(iw/2)*2:trunc(ih/2)*2',
+        '-c:v', 'libx264',
+        '-pix_fmt', 'yuv420p',
+        '-s', '1340x670', // 幅と高さを適切な値に置き換える
+        'output.mp4'
+      );
 
       const outputData = ffmpeg.FS('readFile', 'output.mp4');
       const url = URL.createObjectURL(new Blob([outputData.buffer], { type: 'video/mp4' }));
@@ -217,7 +173,7 @@ const App = () => {
       link.click();
       link.remove();
       URL.revokeObjectURL(url);
-  
+
       setIsConverting(false);
     } catch (error) {
       console.error(error);
@@ -225,17 +181,18 @@ const App = () => {
     }
   };
 
+  
   useEffect(() => {
     const handleResize = () => {
       setViewportHeight(window.innerHeight);
     };
 
-    handleResize(); 
+    handleResize(); // 初回のレンダリング時に実行
 
-    window.addEventListener('resize', handleResize); 
+    window.addEventListener('resize', handleResize); // ウィンドウのリサイズイベントを監視
 
     return () => {
-      window.removeEventListener('resize', handleResize); 
+      window.removeEventListener('resize', handleResize); // コンポーネントがアンマウントされた時にイベントリスナーを削除
     };
   }, []);
 
@@ -265,7 +222,7 @@ const App = () => {
           <div>
             <label>
               Autoplay Delay (seconds):
-              <input type="text" value={autoplayDelay} onChange={handleAutoplayDelayChange} />         
+              <input type="text" value={autoplayDelay} onChange={handleAutoplayDelayChange} />
             </label>
           </div>
           <div>
@@ -273,6 +230,18 @@ const App = () => {
               PageSpeed:
               <input type="text" value={speed} onChange={handleSpeedChange} />
               ミリ秒
+            </label>
+          </div>
+          <div>
+            <label>
+              Animation:
+              <select value={effect} onChange={handleEffectChange}>
+                <option value="default">default</option>
+                <option value="fade">fade</option>
+                <option value="cube">cube</option>
+                <option value="coverflow">coverflow</option>
+                <option value="flip">flip</option>
+              </select>
             </label>
           </div>
           <button onClick={handleApplySettings}>設定</button>
@@ -292,7 +261,7 @@ const App = () => {
         <Swiper
           ref={swiperRef}
           grabCursor={true}
-          modules={[Navigation, Pagination, Scrollbar, A11y, Autoplay, EffectFade]}
+          modules={[Navigation, Pagination, Scrollbar, A11y, Autoplay, EffectFade, EffectCube, EffectCoverflow, EffectFlip]}
           slidesPerView={1}
           spaceBetween={30}
           navigation={true}
@@ -300,9 +269,19 @@ const App = () => {
           pagination={{ clickable: true }}
           autoplay={autoplay ? { delay: speed } : false}
           speed={speed}
-          effect='fade'
-          fadeEffect={{
-            crossFade: true
+          effect={effect}
+          coverflowEffect={{
+            rotate: 50,
+            stretch: 0,
+            depth: 100,
+            modifier: 1,
+            slideShadows: true,
+          }}
+          cubeEffect={{
+            shadow: true,
+            slideShadows: true,
+            shadowOffset: 20,
+            shadowScale: 0.94,
           }}
         >
           {images.map((image, index) => (

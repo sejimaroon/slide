@@ -13,7 +13,6 @@ const port = 4000;
 
 let autoplayDelay = 3;
 let speed = 1000;
-let effect = "slide";
 
 app.use(bodyParser.json());
 app.use(bodyParser.urlencoded({ extended: true }));
@@ -21,18 +20,9 @@ app.use(express.static("./dist"));
 
 const ffmpeg = createFFmpeg({ log: true });
 
-app.post("/slide/updateSettings", (req, res) => {
-  const { autoplayDelay: newAutoplayDelay, speed: newSpeed, effect: newEffect } = req.body;
-  autoplayDelay = newAutoplayDelay;
-  speed = newSpeed;
-  effect = newEffect;
-
-  res.send("Settings updated successfully.");
-});
-
 app.post("/slide/download", async (req, res) => {
   try {
-    const { images, numImages, autoplayDelay, speed, effect } = req.body; 
+    const { images, numImages, autoplayDelay, speed, } = req.body; // 画像の配列と画像の数、autoplayDelay、speedを取得
 
     await ffmpeg.load();
 
@@ -66,13 +56,13 @@ app.post("/slide/download", async (req, res) => {
     let xfadeFilters = "";
 
     for (let i = 0; i < numImages - 1; i++) {
-      const changeTime = speed / 2000;
+      const changeTime = speed / 1000;
       const offsetTime = autoplayDelay * (i + 1);
 
       if (i === 0) {
-        xfadeFilters += `[v${i}][v${i + 1}]xfade=transition=${effect}=duration=${changeTime}:offset=${offsetTime}[v${i}${i + 1}];`;
+        xfadeFilters += `[v${i}][v${i + 1}]xfade=transition=fade:duration=${changeTime}:offset=${offsetTime}[v${i}${i + 1}];`;
       } else {
-        xfadeFilters += `[v${i - 1}${i}][v${i + 1}]xfade=transition=${effect}:duration=${changeTime}:offset=${offsetTime}[v${i}${i + 1}];`;
+        xfadeFilters += `[v${i - 1}${i}][v${i + 1}]xfade=transition=fade:duration=${changeTime}:offset=${offsetTime}[v${i}${i + 1}];`;
       }
     }
     if (xfadeFilters.endsWith(";")) {
@@ -132,10 +122,16 @@ app.post("/slide/download", async (req, res) => {
   }
 });
 
+app.post("/slide/updateSettings", (req, res) => {
+  const { autoplayDelay: newAutoplayDelay, speed: newSpeed } = req.body;
+  autoplayDelay = newAutoplayDelay;
+  speed = newSpeed;
 
+  res.send("Settings updated successfully.");
+});
 
 app.get("/slide/getSettings", (req, res) => {
-  res.json({ autoplayDelay, speed, effect });
+  res.json({ autoplayDelay, speed });
 });
 
 app.get("*", (req, res) => {

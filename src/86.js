@@ -49,6 +49,7 @@ const App = () => {
       }
     }
 
+    
     setImages((prevImages) => [
       ...prevImages,
       ...compressedImages.map((image) => ({ file: image, name: image.name })),
@@ -146,6 +147,7 @@ const App = () => {
         console.log(`Conversion progress: ${Math.round(ratio * 100)}%`);
       });
   
+
       const numImages = capturedSlides.length;
 
       for (let i = 0; i < numImages; i++) {
@@ -154,59 +156,84 @@ const App = () => {
         ffmpeg.FS('writeFile', `input_${i}.jpg`, imageData);
       }
 
-      let filterComplex = "";
+      const changeTime = speed / 1000;
+      
+
+      let filterComplex = '';
+
+      
       for (let i = 0; i < numImages; i++) {
         filterComplex += `[${i}]settb=AVTB[v${i}];`;
       }
+      
 
-      let xfadeFilters = "";
+      let xfadeFilters = '';
 
-      for (let i = 0; i < numImages - 1; i++) {
-        const changeTime = speed / 1000;
-        const offsetTime = autoplayDelay * (i + 1);
-
-        if (i === 0) {
-          xfadeFilters += `[v${i}][v${i + 1}]xfade=transition=fade:duration=${changeTime}:offset=${offsetTime}[v${i}${i + 1}];`;
-        } else {
-          xfadeFilters += `[v${i - 1}${i}][v${i + 1}]xfade=transition=fade:duration=${changeTime}:offset=${offsetTime}[v${i}${i + 1}];`;
+      for (let i = 0; i < numImages - 1; i ++) {
+        const offsetTime = autoplayDelay * (i + 1) - changeTime * (i + 1);
+        // 画像数 > 3かつ偶数の場合
+        if(images.length > 3) {
+          if (i === 0) {   
+            xfadeFilters += `[v${i}][v${i + 1}]xfade=transition=fade:duration=${changeTime}:offset=${offsetTime}[v${i}${i + 1}];`
+          }
+          else {
+            xfadeFilters += `[v${i - 1}${i}][v${i + 1}]xfade=transition=fade:duration=${changeTime}:offset=${offsetTime}[v${i}${i + 1}];`
+          }
         }
+      // 画像が3枚の場合 
+      else if (images.length === 3) {
+        xfadeFilters += `[v${i}][v${i + 1}]xfade=transition=fade:duration=${changeTime}:offset=${offsetTime}[v01];[v01][v2]xfade=transition=fade:duration=${changeTime}:offset=${offsetTime};`;
       }
-      if (xfadeFilters.endsWith(";")) {
-        xfadeFilters = xfadeFilters.slice(0, -1) /* + ','*/;
+      // 画像が2枚の場合
+      else if (images.length === 2) {
+        xfadeFilters += `[v${i}][v${i + 1}]xfade=transition=fade:duration=${changeTime}:offset=${offsetTime},`;
       }
+    }
+    
+    
+    if (xfadeFilters.endsWith(';')) {
+      xfadeFilters = xfadeFilters.slice(0, -1)/* + ','*/;
+    }
+    
 
-      filterComplex += xfadeFilters;
-      /*filterComplex += `scale=trunc(iw/2)*2:trunc(ih/2)*2[v]`;*/
+    filterComplex += xfadeFilters;
+    /*filterComplex += `scale=trunc(iw/2)*2:trunc(ih/2)*2[v]`;*/
 
-      let imageInputs = [];
-      for (let i = 0; i < numImages; i++) {
-        imageInputs.push(
-          "-loop","1",
-          "-t",`${autoplayDelay + speed / 1000}`,
-          "-i",`input_${i}.jpg`
-        );
-      }
-      if (numImages > 1) {
-        await ffmpeg.run(
-          ...imageInputs,
-          "-filter_complex",filterComplex,
-          "-map",`[v${images.length - 2}${images.length - 1}]`,
-          "-c:v","libx264",
-          "-pix_fmt","yuv420p",
-          "-s","1340x670",
-          "output.mp4"
-        );
-      } else {
-        await ffmpeg.run(
-          ...imageInputs,
-          "-filter_complex",filterComplex,
-          "-map","[v]",
-          "-c:v","libx264",
-          "-pix_fmt","yuv420p",
-          "-s","1340x670",
-          "output.mp4"
-        );
-      }
+  
+    let imageInputs = [];
+    for (let i = 0; i < numImages; i++) {
+      imageInputs.push('-loop', '1', '-t', `${autoplayDelay}`, '-i', `input_${i}.jpg`);
+    }
+    if (numImages > 3) {
+      await ffmpeg.run(
+        ...imageInputs,
+        '-filter_complex', filterComplex,
+        '-map', `[v${images.length - 2}${images.length - 1}]`,
+        '-c:v', 'libx264',
+        '-pix_fmt', 'yuv420p',
+        '-s', '1340x670',
+        'output.mp4'
+      );
+    }
+    else {
+      await ffmpeg.run(
+        ...imageInputs,
+        '-filter_complex', filterComplex,
+        '-map', '[v]',
+        '-c:v', 'libx264',
+        '-pix_fmt', 'yuv420p',
+        '-s', '1340x670',
+        'output.mp4'
+      );
+    }
+/*
+if (images.length % 2 === 1){
+      xfadeFilters += `[v][v${i + 1}]xfade=transition=fade:duration=${speed / 1000}:offset=${autoplayDelay - (speed / 1000)}[v${i}${i + 1}],`;
+    }
+    else(images.length % 2 === 0) {
+      xfadeFilters += `[v01][v${images.length - 2}${images.length  - 1}]xfade=transition=fade:duration=${speed / 1000}:offset=${autoplayDelay - (speed / 1000)}[v${i}${i + 1}],`;
+    }
+*/
 
       const outputData = ffmpeg.FS('readFile', 'output.mp4');
       const url = URL.createObjectURL(new Blob([outputData.buffer], { type: 'video/mp4' }));
