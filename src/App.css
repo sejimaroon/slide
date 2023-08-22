@@ -64,3 +64,42 @@ button {
 .handleSpeedChange {
   width: 40px;
 }
+.guide-container {
+  position: absolute;
+  top: 200px;
+  left: 50%;
+  transform: translate(-50%, -50%);
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+}
+.guide-container p {
+  font-size:16px;
+}
+
+@keyframes pathmove {
+  0% {
+    width: 0;
+    left: 0;
+    opacity: 0;
+  }
+  30% {
+    width: 120px;
+    opacity: 1;
+  }
+  100% {
+    left: 50px;
+    opacity: 0;
+  }
+}
+
+.swipe-line-animation {
+  width: 100px;
+  height: 2px;
+  background-color: #000;
+  position: absolute;
+  top: 50%;
+  left: 0;
+  transform: translateY(-50%);
+  animation: pathmove 1s infinite;
+}

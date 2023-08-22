@@ -19,13 +19,11 @@ const App = () => {
   const [images, setImages] = useState([]);
   const [capturedImages, setCapturedImages] = useState([]);
   const [isConverting, setIsConverting] = useState(false);
-
   const swiperRef = useRef(null);
   const [viewportHeight, setViewportHeight] = useState(0);
   const [autoplay, setAutoplay] = useState(true);
   const [autoplayDelay, setAutoplayDelay] = useState(3);
   const [speed, setSpeed] = useState(1000);
-
 
   const handleDrop = async (acceptedFiles) => {
     const compressedImages = [];
@@ -93,9 +91,7 @@ const App = () => {
           swiper.autoplay.start();
         }
       }
-    
   };
-  
 
   const captureSlide = async (slide) => {
     const canvas = document.createElement('canvas');
@@ -285,6 +281,7 @@ const App = () => {
             </div>
             <button onClick={handleApplySettings}>プレビュー</button>
           </div>
+          
           {images.length > 0 && (
             <div>
               <button onClick={handleConvert} disabled={isConverting}>
@@ -325,6 +322,7 @@ const App = () => {
           </SwiperSlide>
         ))}
         </Swiper>
+      
       </div>
     </section>
   );
