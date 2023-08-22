@@ -1,3 +1,19 @@
+body {
+  background-color:#F8DE22;
+}
+.App {
+  margin-left: 5%;
+}
+h1 {
+  color:#F94C10;
+  font-size: 32px;
+  padding-top: 20px;
+  font-family: Impact, Haettenschweiler, 'Arial Narrow Bold', sans-serif;
+}
+
+button {
+  background-color: #F94C10;
+}
 .swiper-pagination-bullet {
   
   background-color: #222 !important;
@@ -12,20 +28,14 @@
 .swiper-button-next {
   display: none !important;
 }
-/*
-.setting-menu {
-  display: flex;
-  flex-direction: row;
-  width: 95%;
-  margin-top: 15px;
-  padding: 0 2.5%;
-}
-*/
+
 .dropzone {
   text-align: center;
   width: 100%;
   height: 150px; 
   border: 1px dashed black;
+  margin-bottom: 20px;
+  background-color: #FFF;
 }
 .dropzone p {
   font-size:12px;
@@ -34,7 +44,7 @@
 }
 .dropzone:hover {
   cursor: pointer;
-  background-color: #ccc;
+  
 }
 
 .settings {

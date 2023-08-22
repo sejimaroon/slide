@@ -75,6 +75,7 @@ const App = () => {
 
       swiper.update();
       swiper.autoplay.start();
+      console.log("Autoplay setting:", swiper.params.autoplay);
 
       const requestBody = {
         autoPlayDelay: autoplayDelay,
@@ -88,8 +89,13 @@ const App = () => {
         .catch(error => {
           console.error(error);
         });
-    }
+        if (autoplay) {
+          swiper.autoplay.start();
+        }
+      }
+    
   };
+  
 
   const captureSlide = async (slide) => {
     const canvas = document.createElement('canvas');
@@ -242,53 +248,56 @@ const App = () => {
   return (
     <section id="testimonials">
       <div className="container" style={{ height: `${viewportHeight}px` }}>
-        <h1>App</h1>
-        <Dropzone onDrop={handleDrop}>
-          {({ getRootProps, getInputProps }) => (
-            <div
-              {...getRootProps()}
-              style={{ width: '90%', height: '100px', border: '1px dashed black', marginLeft: '5%' }}
-              className="dropzone"
-            >
-              <input {...getInputProps()} />
-              <p>クリックして画像をドラッグ＆ドロップ</p>
+        <div className="App">
+          <h1>SLIDE</h1>
+          <Dropzone onDrop={handleDrop}>
+            {({ getRootProps, getInputProps }) => (
+              <div
+                {...getRootProps()}
+                style={{ width: '90%', height: '100px', border: '1px dashed black'}}
+                className="dropzone"
+              >
+                <input {...getInputProps()} />
+                <p>クリックして画像をドロップ</p>
+              </div>
+            )}
+          </Dropzone>
+          <div className="settings">
+            <div>
+              <label>
+                画像表示時間 :
+                <input type="text" value={autoplayDelay} onChange={handleAutoplayDelayChange} />
+                秒         
+              </label>
+            </div>
+            <div>
+              <label>
+                画像切り替わり時間 :
+                <input type="text" value={speed} onChange={handleSpeedChange} />
+                ミリ秒
+              </label>
+            </div>
+            <div>
+              <label>
+                <input type="checkbox" checked={autoplay} onChange={toggleAutoplay} />
+                自動再生
+              </label>
+            </div>
+            <button onClick={handleApplySettings}>プレビュー</button>
+          </div>
+          {images.length > 0 && (
+            <div>
+              <button onClick={handleConvert} disabled={isConverting}>
+                {isConverting ? '変換中...' : 'スライドショーに変換'}
+              </button>
             </div>
           )}
-        </Dropzone>
-        <div className="settings">
-          <div>
-            <label>
-              <input type="checkbox" checked={autoplay} onChange={toggleAutoplay} />
-              Autoplay
-            </label>
-          </div>
-          <div>
-            <label>
-              Autoplay Delay (seconds):
-              <input type="text" value={autoplayDelay} onChange={handleAutoplayDelayChange} />         
-            </label>
-          </div>
-          <div>
-            <label>
-              PageSpeed:
-              <input type="text" value={speed} onChange={handleSpeedChange} />
-              ミリ秒
-            </label>
-          </div>
-          <button onClick={handleApplySettings}>設定</button>
+          {capturedImages.length > 0 && (
+            <div>
+              <button onClick={handleDownload}>スライドショーをダウンロード</button>
+            </div>
+          )}
         </div>
-        {images.length > 0 && (
-          <div>
-            <button onClick={handleConvert} disabled={isConverting}>
-              {isConverting ? '変換中...' : 'スライドショーに変換'}
-            </button>
-          </div>
-        )}
-        {capturedImages.length > 0 && (
-          <div>
-            <button onClick={handleDownload}>スライドショーをダウンロード</button>
-          </div>
-        )}
         <Swiper
           ref={swiperRef}
           grabCursor={true}
@@ -304,12 +313,17 @@ const App = () => {
           fadeEffect={{
             crossFade: true
           }}
+          onSwiper={(swiper) => {
+            if (swiper) {
+              swiper.slideTo(0); // スライドを最初のスライドに移動
+            }
+          }}
         >
-          {images.map((image, index) => (
-            <SwiperSlide key={index}>
-              <img src={URL.createObjectURL(image.file)} alt="" style={{ width: '100%' }} />
-            </SwiperSlide>
-          ))}
+        {images.map((image, index) => (
+          <SwiperSlide key={index}>
+            <img src={URL.createObjectURL(image.file)} alt="" style={{ width: '100%' }} />
+          </SwiperSlide>
+        ))}
         </Swiper>
       </div>
     </section>
