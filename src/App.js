@@ -280,16 +280,17 @@ const App = () => {
               </label>
             </div>
             <button onClick={handleApplySettings}>プレビュー</button>
+            <p>※スライドをタッチして操作するとスライドショーが始まります</p>
           </div>
           
-          {images.length > 0 && (
+          {images.length > 1 && (
             <div>
               <button onClick={handleConvert} disabled={isConverting}>
                 {isConverting ? '変換中...' : 'スライドショーに変換'}
               </button>
             </div>
           )}
-          {capturedImages.length > 0 && (
+          {capturedImages.length > 1 && (
             <div>
               <button onClick={handleDownload}>スライドショーをダウンロード</button>
             </div>
