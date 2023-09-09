@@ -1,5 +1,6 @@
 body {
   background-color:#F8DE22;
+  font-size:24px
 }
 .App {
   margin-left: 5%;
@@ -10,9 +11,14 @@ h1 {
   padding-top: 20px;
   font-family: Impact, Haettenschweiler, 'Arial Narrow Bold', sans-serif;
 }
-
+input {
+  padding: 3px 5px ;
+}
 button {
   background-color: #F94C10;
+  width: 240px;
+  height: 36px;
+  font-size:18px;
 }
 .swiper-pagination-bullet {
   
@@ -38,7 +44,7 @@ button {
   background-color: #FFF;
 }
 .dropzone p {
-  font-size:12px;
+  font-size:16px;
   text-align: center;
   font-weight: bold;
 }
@@ -48,7 +54,6 @@ button {
 }
 
 .settings {
-  font-size:15px;
   font-weight:bold;
   padding: 0;
 }
@@ -76,30 +81,6 @@ button {
 .guide-container p {
   font-size:16px;
 }
-
-@keyframes pathmove {
-  0% {
-    width: 0;
-    left: 0;
-    opacity: 0;
-  }
-  30% {
-    width: 120px;
-    opacity: 1;
-  }
-  100% {
-    left: 50px;
-    opacity: 0;
-  }
-}
-
-.swipe-line-animation {
-  width: 100px;
-  height: 2px;
-  background-color: #000;
-  position: absolute;
-  top: 50%;
-  left: 0;
-  transform: translateY(-50%);
-  animation: pathmove 1s infinite;
+.kome {
+  font-size:15px;
 }

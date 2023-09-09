@@ -280,19 +280,19 @@ const App = () => {
               </label>
             </div>
             <button onClick={handleApplySettings}>プレビュー</button>
-            <p>※スライドをタッチして操作するとスライドショーが始まります</p>
+            <p className='kome'>※スライドをタッチして操作するとスライドショーが始まります</p>
           </div>
           
           {images.length > 1 && (
             <div>
               <button onClick={handleConvert} disabled={isConverting}>
-                {isConverting ? '変換中...' : 'スライドショーに変換'}
+                {isConverting ? '変換中...' : 'データに変換'}
               </button>
             </div>
           )}
           {capturedImages.length > 1 && (
             <div>
-              <button onClick={handleDownload}>スライドショーをダウンロード</button>
+              <button onClick={handleDownload}>ダウンロード</button>
             </div>
           )}
         </div>
