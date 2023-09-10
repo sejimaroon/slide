@@ -268,7 +268,7 @@ const App = () => {
             </div>
             <div>
               <label>
-                画像切り替わり時間 :
+                スライド時間 :
                 <input type="text" value={speed} onChange={handleSpeedChange} />
                 ミリ秒
               </label>
