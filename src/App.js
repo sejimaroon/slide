@@ -24,6 +24,7 @@ const App = () => {
   const [autoplay, setAutoplay] = useState(true);
   const [autoplayDelay, setAutoplayDelay] = useState(3);
   const [speed, setSpeed] = useState(1000);
+  const [showKome, setShowKome] = useState(false);
 
   const handleDrop = async (acceptedFiles) => {
     const compressedImages = [];
@@ -73,8 +74,9 @@ const App = () => {
 
       swiper.update();
       swiper.autoplay.start();
+      setShowKome(true);
       console.log("Autoplay setting:", swiper.params.autoplay);
-
+      
       const requestBody = {
         autoPlayDelay: autoplayDelay,
         speed: speed,
@@ -211,13 +213,23 @@ const App = () => {
       }
 
       const outputData = ffmpeg.FS('readFile', 'output.mp4');
-      const url = URL.createObjectURL(new Blob([outputData.buffer], { type: 'video/mp4' }));
-      const link = document.createElement('a');
-      link.href = url;
-      link.setAttribute('download', 'slideshow.mp4');
-      document.body.appendChild(link);
-      link.click();
-      link.remove();
+      const blob = new Blob([outputData.buffer], { type: 'video/mp4' });
+  
+      // BlobオブジェクトからURLを生成
+      const url = URL.createObjectURL(blob);
+  
+      // ダウンロード用のリンクを動的に生成
+      const a = document.createElement('a');
+      a.href = url;
+      a.download = 'slideshow.mp4';
+      a.style.display = 'none';
+  
+      // リンクをDOMに追加してクリックイベントを発生させる
+      document.body.appendChild(a);
+      a.click();
+  
+      // リンクを削除してURLを解放
+      document.body.removeChild(a);
       URL.revokeObjectURL(url);
   
       setIsConverting(false);
@@ -279,8 +291,10 @@ const App = () => {
                 自動再生
               </label>
             </div>
-            <button onClick={handleApplySettings}>プレビュー</button>
-            <p className='kome'>※スライドをタッチして操作するとスライドショーが始まります</p>
+            <div className='prev'>
+              <button onClick={handleApplySettings}>プレビュー</button>
+              {showKome && <p className='kome'>※画像をスワイプするとスライドショーが始まります</p>}
+            </div>
           </div>
           
           {images.length > 1 && (
