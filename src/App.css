@@ -1,12 +1,12 @@
 body {
-  background-color:#F8DE22;
+  background-color:#F94C10;
   font-size:24px
 }
 .App {
   margin-left: 5%;
 }
 h1 {
-  color:#F94C10;
+  color:#F8DE22;
   font-size: 32px;
   padding-top: 20px;
   font-family: Impact, Haettenschweiler, 'Arial Narrow Bold', sans-serif;
@@ -15,7 +15,8 @@ input {
   padding: 3px 5px ;
 }
 button {
-  background-color: #F94C10;
+  background-color: #F8DE22;
+  color:#eee;
   width: 240px;
   height: 36px;
   font-size:18px;
