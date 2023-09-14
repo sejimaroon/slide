@@ -233,6 +233,8 @@ const App = () => {
       URL.revokeObjectURL(url);
   
       setIsConverting(false);
+      window.alert('ダウンロードが成功しました！');
+
     } catch (error) {
       console.error(error);
       setIsConverting(false);

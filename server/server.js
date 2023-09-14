@@ -18,7 +18,7 @@ app.use(bodyParser.json());
 app.use(bodyParser.urlencoded({ extended: true }));
 app.use(express.static("./dist"));
 
-const ffmpeg = createFFmpeg({ log: true });
+const ffmpeg = createFFmpeg();
 
 app.post("/slide/download", async (req, res) => {
   try {
