@@ -1,9 +1,3 @@
-/*
-object-assign
-(c) Sindre Sorhus
-@license MIT
-*/
-
 /*!
  * Compressor.js v1.2.1
  * https://fengyuanchen.github.io/compressorjs
