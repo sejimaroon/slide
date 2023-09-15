@@ -295,7 +295,7 @@ const App = () => {
             </div>
             <div className='prev'>
               <button onClick={handleApplySettings}>プレビュー</button>
-              {showKome && <p className='kome'>※画像をスワイプするとスライドショーが始まります</p>}
+              {showKome && <p className='kome'>※画像をスワイプしてください</p>}
             </div>
           </div>
           
