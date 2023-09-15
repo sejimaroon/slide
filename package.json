@@ -49,7 +49,7 @@
     "eject": "react-scripts eject",
     "predeploy": "echo Predeploy script executed",
     "deploy": "gh-pages -d build",
-    "open": "rmdir /s /q dist && npx webpack --config webpack.config.js && node dist/server.bundle.js",
+    "open": "npx webpack --config webpack.config.js && node dist/server.bundle.js",
     "git-ud": "npm run build --clear-chache && git add . && git commit -m 'message' && git push"
   },
   "eslintConfig": {
