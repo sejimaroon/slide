@@ -7,7 +7,7 @@ const path = require("path");
 const { createFFmpeg, fetchFile } = require("@ffmpeg/ffmpeg");
 const fs = require("fs");
 const bodyParser = require("body-parser");
-
+const cors = require("cors");
 const app = express();
 const port = 4000;
 
@@ -17,8 +17,17 @@ let speed = 1000;
 app.use(bodyParser.json());
 app.use(bodyParser.urlencoded({ extended: true }));
 app.use(express.static("./dist"));
+app.use(cors());
+
 
 const ffmpeg = createFFmpeg();
+
+const corsOptions = {
+  origin: "http://example.com", // 許可するオリジンを指定
+};
+
+app.use(cors(corsOptions));
+
 
 app.post("/slide/download", async (req, res) => {
   try {
@@ -120,6 +129,12 @@ app.post("/slide/download", async (req, res) => {
     console.error("Error generating video:", error);
     res.status(500).json({ error: "Failed to generate video" });
   }
+});
+
+app.options("/slide/download", (req, res) => {
+  res.header("Access-Control-Allow-Methods", "POST");
+  res.header("Access-Control-Allow-Headers", "Content-Type");
+  res.send();
 });
 
 app.post("/slide/updateSettings", (req, res) => {
