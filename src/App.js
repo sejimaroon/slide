@@ -1,7 +1,6 @@
 import React, { useState, useRef, useEffect } from 'react';
 import { Navigation, Pagination, Scrollbar, A11y, Autoplay, EffectFade} from 'swiper/modules';
 import { Swiper, SwiperSlide } from 'swiper/react';
-import ErrorDisplay from './ErrorDisplay';
 import './App.css';
 import 'swiper/css';
 import 'swiper/css/navigation';
@@ -20,6 +19,7 @@ const App = () => {
   const [images, setImages] = useState([]);
   const [capturedImages, setCapturedImages] = useState([]);
   const [isConverting, setIsConverting] = useState(false);
+  const [downloadButtonDisabled, setDownloadButtonDisabled] = useState(false);
   const swiperRef = useRef(null);
   const [viewportHeight, setViewportHeight] = useState(0);
   const [autoplay, setAutoplay] = useState(true);
@@ -27,6 +27,7 @@ const App = () => {
   const [speed, setSpeed] = useState(1000);
   const [showKome, setShowKome] = useState(false);
   const [errorMessage, setErrorMessage] = useState('');
+
 
   const handleDrop = async (acceptedFiles) => {
     const compressedImages = [];
@@ -142,7 +143,14 @@ const App = () => {
   };
 
   const handleDownload = async () => {
-    setIsConverting(true);
+    if (downloadButtonDisabled) {
+      // ダウンロード中またはボタンが無効ならば何もしない
+      return;
+    }
+
+    setErrorMessage('');
+    setDownloadButtonDisabled(true); // ダウンロードボタンを無効化
+
   
     try {
       const capturedSlides = await captureSlides();
@@ -234,13 +242,12 @@ const App = () => {
       // リンクを削除してURLを解放
       document.body.removeChild(a);
       URL.revokeObjectURL(url);
-  
-      setIsConverting(false);
       window.alert('ダウンロードが成功しました！');
+      setDownloadButtonDisabled(false);
 
     } catch (error) {
       console.error(error);
-      setIsConverting(false);
+      setDownloadButtonDisabled(false);
     }
   };
 
@@ -277,6 +284,7 @@ const App = () => {
           </Dropzone>
           <div className="settings">
             <div>
+              <p>{errorMessage}</p>
               <label>
                 画像表示時間 :
                 <input type="text" value={autoplayDelay} onChange={handleAutoplayDelayChange} />
@@ -311,10 +319,12 @@ const App = () => {
           )}
           {capturedImages.length > 1 && (
             <div>
-              <button onClick={handleDownload}>ダウンロード</button>
+              <button onClick={handleDownload} disabled={downloadButtonDisabled}>
+                {downloadButtonDisabled ? "ダウンロード中..." : "ダウンロード"}
+              </button>
             </div>
           )}
-            <ErrorDisplay errorMessage={errorMessage} />
+            
         </div>
         <Swiper
           ref={swiperRef}
