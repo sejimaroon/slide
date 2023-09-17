@@ -1,6 +1,7 @@
 import React, { useState, useRef, useEffect } from 'react';
 import { Navigation, Pagination, Scrollbar, A11y, Autoplay, EffectFade} from 'swiper/modules';
 import { Swiper, SwiperSlide } from 'swiper/react';
+import ErrorDisplay from './ErrorDisplay';
 import './App.css';
 import 'swiper/css';
 import 'swiper/css/navigation';
@@ -25,6 +26,7 @@ const App = () => {
   const [autoplayDelay, setAutoplayDelay] = useState(3);
   const [speed, setSpeed] = useState(1000);
   const [showKome, setShowKome] = useState(false);
+  const [errorMessage, setErrorMessage] = useState('');
 
   const handleDrop = async (acceptedFiles) => {
     const compressedImages = [];
@@ -134,6 +136,7 @@ const App = () => {
       setIsConverting(false);
     } catch (error) {
       console.error(error);
+      setErrorMessage('エラー: ' + error.message); // エラーメッセージをセット
       setIsConverting(false);
     }
   };
@@ -311,6 +314,7 @@ const App = () => {
               <button onClick={handleDownload}>ダウンロード</button>
             </div>
           )}
+            <ErrorDisplay errorMessage={errorMessage} />
         </div>
         <Swiper
           ref={swiperRef}
