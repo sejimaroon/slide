@@ -83,10 +83,7 @@ button {
 .guide-container p {
   font-size:16px;
 }
-.prev {
-  display: flex;
-  flex-direction: row;
-} 
+
 .kome {
   font-size:15px;
   

@@ -14,7 +14,7 @@ import Compressor from 'compressorjs';
 import { createFFmpeg, fetchFile } from '@ffmpeg/ffmpeg';
 import axios from 'axios';
 
-const ffmpeg = createFFmpeg({ log: true });
+const ffmpeg = createFFmpeg();
 
 const App = () => {
   const [images, setImages] = useState([]);
