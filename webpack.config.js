@@ -7,6 +7,7 @@ const clientConfig = {
     filename: 'client.bundle.js',
   },
   mode: 'production',
+  devtool: 'eval-source-map',
   module: {
     rules: [
         {
@@ -56,6 +57,7 @@ const serverConfig = {
     filename: 'server.bundle.js',
   },
   mode: 'production',
+  devtool: 'eval-source-map',
   module: {
     rules: [
         {

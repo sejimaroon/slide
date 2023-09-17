@@ -304,6 +304,7 @@ const App = () => {
                 自動再生
               </label>
             </div>
+            <div className='button-flex'>
             <div className='prev'>
               <button onClick={handleApplySettings}>プレビュー</button>
               {showKome && <p className='kome'>※画像をスワイプしてください</p>}
@@ -324,7 +325,7 @@ const App = () => {
               </button>
             </div>
           )}
-            
+          </div>
         </div>
         <Swiper
           ref={swiperRef}

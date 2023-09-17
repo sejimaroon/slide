@@ -76,7 +76,7 @@ button {
   top: 200px;
   left: 50%;
   transform: translate(-50%, -50%);
-  display: flex;
+  display:inline-flex;
   flex-direction: column;
   align-items: center;
 }
@@ -86,7 +86,11 @@ button {
 
 .kome {
   font-size:15px;
+}
+.button-flex {
+  display: inline-flex;
   
+  flex-direction: row;
 }
 @media(max-width:767.9px) {
   
