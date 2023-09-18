@@ -95,7 +95,13 @@ button {
 @media(max-width:767.9px) {
   
   body {
-    font-size:16px;
+    font-size:14px;
+  }
+  .App {
+    margin-left: 2%;
+  }
+  .dropzone {
+    width: 96%;
   }
   .kome {
     font-size:10px;

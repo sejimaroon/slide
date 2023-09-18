@@ -26,7 +26,7 @@ const App = () => {
   const [autoplayDelay, setAutoplayDelay] = useState(3);
   const [speed, setSpeed] = useState(1000);
   const [showKome, setShowKome] = useState(false);
-  const [errorMessage, setErrorMessage] = useState('');
+  const [errorMessage, setErrorMessage] = useState("");
 
 
   const handleDrop = async (acceptedFiles) => {
@@ -137,7 +137,7 @@ const App = () => {
       setIsConverting(false);
     } catch (error) {
       console.error(error);
-      setErrorMessage('エラー: ' + error.message); // エラーメッセージをセット
+      setErrorMessage(`エラー：${error}`);
       setIsConverting(false);
     }
   };
@@ -248,6 +248,7 @@ const App = () => {
     } catch (error) {
       console.error(error);
       setDownloadButtonDisabled(false);
+      setErrorMessage(`エラー：${error}`);
     }
   };
 
@@ -284,7 +285,7 @@ const App = () => {
           </Dropzone>
           <div className="settings">
             <div>
-              <p>{errorMessage}</p>
+            <p className="error-message">{errorMessage}</p>
               <label>
                 画像表示時間 :
                 <input type="text" value={autoplayDelay} onChange={handleAutoplayDelayChange} />
