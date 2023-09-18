@@ -104,30 +104,36 @@ const App = () => {
     const ctx = canvas.getContext('2d');
     canvas.width = slide.offsetWidth;
     canvas.height = slide.offsetHeight;
-
+  
     return new Promise((resolve) => {
       const image = new Image();
       image.onload = () => {
         ctx.drawImage(image, 0, 0, slide.offsetWidth, slide.offsetHeight);
-        resolve(canvas.toDataURL('image/jpeg', 1.0));
+        // 画像をData URL形式で取得
+        const dataUrl = canvas.toDataURL('image/jpeg', 1.0);
+        resolve(dataUrl);
       };
       image.src = slide.children[0].src;
     });
   };
+  
 
   const captureSlides = async () => {
     const swiper = swiperRef.current.swiper;
     const slideElements = swiper.el.children[0].querySelectorAll('.swiper-slide');
-
+  
     const capturedSlides = [];
-
+  
     for (const slide of slideElements) {
       const capturedSlide = await captureSlide(slide);
       capturedSlides.push(capturedSlide);
     }
-
+  
+    console.log('capturedSlides:', capturedSlides); // デバッグ用にログ出力
+  
     return capturedSlides;
   };
+  
 
   const handleConvert = async () => {
     setIsConverting(true);
@@ -167,6 +173,7 @@ const App = () => {
       for (let i = 0; i < numImages; i++) {
         const slide = capturedSlides[i];
         const imageData = await fetchFile(slide);
+        console.log('imageData:', imageData); // デバッグ用にログ出力
         ffmpeg.FS('writeFile', `input_${i}.jpg`, imageData);
       }
 
