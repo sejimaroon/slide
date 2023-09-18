@@ -91,6 +91,7 @@ const App = () => {
         })
         .catch(error => {
           console.error(error);
+          setErrorMessage(`設定エラー：${error}`);
         });
         if (autoplay) {
           swiper.autoplay.start();
@@ -137,7 +138,7 @@ const App = () => {
       setIsConverting(false);
     } catch (error) {
       console.error(error);
-      setErrorMessage(`エラー：${error}`);
+      setErrorMessage(`データ化エラー：${error}`);
       setIsConverting(false);
     }
   };
@@ -242,13 +243,15 @@ const App = () => {
       // リンクを削除してURLを解放
       document.body.removeChild(a);
       URL.revokeObjectURL(url);
-      window.alert('ダウンロードが成功しました！');
+      window.alert('ダウンロードが完了しました！');
       setDownloadButtonDisabled(false);
+      console.log('outputData:', outputData);
 
     } catch (error) {
       console.error(error);
       setDownloadButtonDisabled(false);
-      setErrorMessage(`エラー：${error}`);
+      setErrorMessage(`downloadエラー：${error}`);
+
     }
   };
 
