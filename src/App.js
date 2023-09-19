@@ -11,7 +11,7 @@ import 'swiper/css/effect-fade';
 import Dropzone from 'react-dropzone';
 import Compressor from 'compressorjs';
 import { createFFmpeg, fetchFile } from '@ffmpeg/ffmpeg';
-import axios from 'axios';
+
 
 const ffmpeg = createFFmpeg();
 
@@ -79,23 +79,6 @@ const App = () => {
       swiper.autoplay.start();
       setShowKome(true);
       console.log("Autoplay setting:", swiper.params.autoplay);
-      
-      const requestBody = {
-        autoPlayDelay: autoplayDelay,
-        speed: speed,
-      };
-  
-      axios.post('/slide/updateSettings', requestBody)
-        .then(response => {
-          console.log(response.data);
-        })
-        .catch(error => {
-          console.error(error);
-          setErrorMessage(`設定エラー：${error}`);
-        });
-        if (autoplay) {
-          swiper.autoplay.start();
-        }
       }
   };
 
@@ -154,10 +137,8 @@ const App = () => {
       // ダウンロード中またはボタンが無効ならば何もしない
       return;
     }
-
     setErrorMessage('');
     setDownloadButtonDisabled(true); // ダウンロードボタンを無効化
-
   
     try {
       const capturedSlides = await captureSlides();

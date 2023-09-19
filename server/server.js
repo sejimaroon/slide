@@ -11,9 +11,6 @@ const bodyParser = require("body-parser");
 const app = express();
 const port = 4000;
 
-let autoplayDelay = 3;
-let speed = 1000;
-
 app.use(bodyParser.json());
 app.use(bodyParser.urlencoded({ extended: true }));
 app.use(express.static("./dist"));
@@ -109,29 +106,15 @@ app.post("/slide/download", async (req, res) => {
       const outputData = fs.readFileSync(outputFilePath);
       res.set("Content-Type", "video/mp4");
       res.set("Content-Disposition", 'attachment; filename="slideshow.mp4"');
-      res.setHeader("Cross-Origin-Opener-Policy", "same-origin");
-      res.setHeader("Cross-Origin-Embedder-Policy", "require-corp");
-      res.setHeader("Permissions-Policy", "interest-cohort=()");
       res.send(outputData);
     } else {
       throw new Error("Output video file not found.");
     }
+    
   } catch (error) {
     console.error("Error generating video:", error);
     res.status(500).json({ error: "Failed to generate video" });
   }
-});
-
-app.post("/slide/updateSettings", (req, res) => {
-  const { autoplayDelay: newAutoplayDelay, speed: newSpeed } = req.body;
-  autoplayDelay = newAutoplayDelay;
-  speed = newSpeed;
-
-  res.send("Settings updated successfully.");
-});
-
-app.get("/slide/getSettings", (req, res) => {
-  res.json({ autoplayDelay, speed });
 });
 
 app.get("*", (req, res) => {
