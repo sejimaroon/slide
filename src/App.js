@@ -17,8 +17,8 @@ const ffmpeg = createFFmpeg();
 
 const App = () => {
   const [images, setImages] = useState([]);
-  const [capturedImages, setCapturedImages] = useState([]);
-  const [isConverting, setIsConverting] = useState(false);
+  const [, setCapturedImages] = useState([]);
+  const [, setIsConverting] = useState(false);
   const [downloadButtonDisabled, setDownloadButtonDisabled] = useState(false);
   const swiperRef = useRef(null);
   const [viewportHeight, setViewportHeight] = useState(0);
@@ -26,6 +26,7 @@ const App = () => {
   const [autoplayDelay, setAutoplayDelay] = useState(3);
   const [speed, setSpeed] = useState(1000);
   const [showKome, setShowKome] = useState(false);
+  const [showDLbutton, setShowDLbutton] = useState(false);
   const [errorMessage, setErrorMessage] = useState("");
 
 
@@ -78,6 +79,7 @@ const App = () => {
       swiper.update();
       swiper.autoplay.start();
       setShowKome(true);
+      setShowDLbutton(true);
       console.log("Autoplay setting:", swiper.params.autoplay);
       }
   };
@@ -118,25 +120,12 @@ const App = () => {
   };
   
 
-  const handleConvert = async () => {
-    setIsConverting(true);
-
-    try {
-      const capturedSlides = await captureSlides();
-      setCapturedImages(capturedSlides);
-      setIsConverting(false);
-    } catch (error) {
-      console.error(error);
-      setErrorMessage(`データ化エラー：${error}`);
-      setIsConverting(false);
-    }
-  };
-
   const handleDownload = async () => {
     if (downloadButtonDisabled) {
       // ダウンロード中またはボタンが無効ならば何もしない
       return;
     }
+    setIsConverting(true); // 変換中のフラグを立てる
     setErrorMessage('');
     setDownloadButtonDisabled(true); // ダウンロードボタンを無効化
   
@@ -150,25 +139,25 @@ const App = () => {
       });
   
       const numImages = capturedSlides.length;
-
+  
       for (let i = 0; i < numImages; i++) {
         const slide = capturedSlides[i];
         const imageData = await fetchFile(slide);
         console.log('imageData:', imageData); // デバッグ用にログ出力
         ffmpeg.FS('writeFile', `input_${i}.jpg`, imageData);
       }
-
+  
       let filterComplex = "";
       for (let i = 0; i < numImages; i++) {
         filterComplex += `[${i}]settb=AVTB[v${i}];`;
       }
-
+  
       let xfadeFilters = "";
-
+  
       for (let i = 0; i < numImages - 1; i++) {
         const changeTime = speed / 1000;
         const offsetTime = autoplayDelay * (i + 1);
-
+  
         if (i === 0) {
           xfadeFilters += `[v${i}][v${i + 1}]xfade=transition=fade:duration=${changeTime}:offset=${offsetTime}[v${i}${i + 1}];`;
         } else {
@@ -178,40 +167,41 @@ const App = () => {
       if (xfadeFilters.endsWith(";")) {
         xfadeFilters = xfadeFilters.slice(0, -1) /* + ','*/;
       }
-
+  
       filterComplex += xfadeFilters;
       /*filterComplex += `scale=trunc(iw/2)*2:trunc(ih/2)*2[v]`;*/
-
+  
       let imageInputs = [];
       for (let i = 0; i < numImages; i++) {
         imageInputs.push(
-          "-loop","1",
-          "-t",`${autoplayDelay + speed / 1000}`,
-          "-i",`input_${i}.jpg`
+          "-loop", "1",
+          "-t", `${autoplayDelay + speed / 1000}`,
+          "-i", `input_${i}.jpg`
         );
       }
+  
       if (numImages > 1) {
         await ffmpeg.run(
           ...imageInputs,
-          "-filter_complex",filterComplex,
-          "-map",`[v${images.length - 2}${images.length - 1}]`,
-          "-c:v","libx264",
-          "-pix_fmt","yuv420p",
-          "-s","1340x670",
+          "-filter_complex", filterComplex,
+          "-map", `[v${images.length - 2}${images.length - 1}]`,
+          "-c:v", "libx264",
+          "-pix_fmt", "yuv420p",
+          "-s", "1340x670",
           "output.mp4"
         );
       } else {
         await ffmpeg.run(
           ...imageInputs,
-          "-filter_complex",filterComplex,
-          "-map","[v]",
-          "-c:v","libx264",
-          "-pix_fmt","yuv420p",
-          "-s","1340x670",
+          "-filter_complex", filterComplex,
+          "-map", "[v]",
+          "-c:v", "libx264",
+          "-pix_fmt", "yuv420p",
+          "-s", "1340x670",
           "output.mp4"
         );
       }
-
+  
       const outputData = ffmpeg.FS('readFile', 'output.mp4');
       const blob = new Blob([outputData.buffer], { type: 'video/mp4' });
   
@@ -234,15 +224,15 @@ const App = () => {
       window.alert('ダウンロードが完了しました！');
       setDownloadButtonDisabled(false);
       console.log('outputData:', outputData);
-
+  
     } catch (error) {
       console.error(error);
       setDownloadButtonDisabled(false);
       setErrorMessage(`downloadエラー：${error}`);
-
+    } finally {
+      setIsConverting(false); // 変換完了後に変換中のフラグを解除
     }
   };
-
   useEffect(() => {
     const handleResize = () => {
       setViewportHeight(window.innerHeight);
@@ -302,15 +292,7 @@ const App = () => {
               {showKome && <p className='kome'>※画像をスワイプしてください</p>}
             </div>
           </div>
-          
-          {images.length > 1 && (
-            <div>
-              <button onClick={handleConvert} disabled={isConverting}>
-                {isConverting ? '変換中...' : 'データに変換'}
-              </button>
-            </div>
-          )}
-          {capturedImages.length > 1 && (
+          {showDLbutton && (
             <div>
               <button onClick={handleDownload} disabled={downloadButtonDisabled}>
                 {downloadButtonDisabled ? "ダウンロード中..." : "ダウンロード"}

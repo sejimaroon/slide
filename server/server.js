@@ -110,7 +110,6 @@ app.post("/slide/download", async (req, res) => {
     } else {
       throw new Error("Output video file not found.");
     }
-    
   } catch (error) {
     console.error("Error generating video:", error);
     res.status(500).json({ error: "Failed to generate video" });
