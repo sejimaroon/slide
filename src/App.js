@@ -256,7 +256,7 @@ const App = () => {
             {({ getRootProps, getInputProps }) => (
               <div
                 {...getRootProps()}
-                style={{ width: '90%', height: '100px', border: '1px dashed black'}}
+                style={{ width: '100%', height: '100px', border: '1px dashed black'}}
                 className="dropzone"
               >
                 <input {...getInputProps()} />

@@ -3,7 +3,7 @@ body {
   font-size:24px
 }
 .App {
-  margin-left: 5%;
+  padding: 2% 5%;
 }
 h1 {
   color:#F8DE22;
@@ -98,10 +98,10 @@ button {
     font-size:14px;
   }
   .App {
-    margin-left: 2%;
+    padding: 2%;
   }
   .dropzone {
-    width: 96%;
+    width: 100% !important;
   }
   .kome {
     font-size:10px;
