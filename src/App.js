@@ -289,7 +289,7 @@ const App = () => {
             <div className='button-flex'>
             <div className='prev'>
               <button onClick={handleApplySettings}>プレビュー</button>
-              {showKome && <p className='kome'>※画像をスワイプしてください</p>}
+              {showKome && <p className='kome'>※画像をスワイプすると動作が確認できます</p>}
             </div>
           </div>
           {showDLbutton && (
