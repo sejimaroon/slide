@@ -67,10 +67,9 @@ app.post("/slide/download", async (req, res) => {
     }
 
     filterComplex += xfadeFilters;
-    /*
-  filterComplex += `scale=trunc(iw/2)*2:trunc(ih/2)*2[v]`;
-  */
-
+    
+    filterComplex += `scale=trunc(iw/2)*2:trunc(ih/2)*2[v]`;
+  
     let imageInputs = [];
     for (let i = 0; i < numImages; i++) {
       imageInputs.push(

@@ -229,6 +229,7 @@ const App = () => {
       setErrorMessage(`ダウンロードエラー：${error.message || error}`);
     } finally {
       setIsConverting(false); // 変換完了後に変換中のフラグを解除
+      setDownloadButtonDisabled(true);
     }
   };
   
