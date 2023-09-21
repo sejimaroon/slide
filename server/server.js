@@ -19,7 +19,7 @@ const ffmpeg = createFFmpeg();
 
 app.post("/slide/download", async (req, res) => {
   try {
-    const { images, numImages, autoplayDelay, speed, } = req.body; // 画像の配列と画像の数、autoplayDelay、speedを取得
+    const { images, numImages, autoplayDelay, speed, filename, } = req.body; // 画像の配列と画像の数、autoplayDelay、speedを取得
 
     await ffmpeg.load();
 
@@ -105,7 +105,7 @@ app.post("/slide/download", async (req, res) => {
     if (fs.existsSync(outputFilePath)) {
       const outputData = fs.readFileSync(outputFilePath);
       res.set("Content-Type", "video/mp4");
-      res.set("Content-Disposition", 'attachment; filename="slideshow.mp4"');
+      res.set("Content-Disposition", `attachment; filename="${filename}"`);
       res.send(outputData);
     } else {
       throw new Error("Output video file not found.");

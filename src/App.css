@@ -76,7 +76,7 @@ button {
   top: 200px;
   left: 50%;
   transform: translate(-50%, -50%);
-  display:inline-flex;
+  display:flex;
   flex-direction: column;
   align-items: center;
 }
@@ -88,7 +88,7 @@ button {
   font-size:15px;
 }
 .button-flex {
-  display: inline-flex;
+  display:flex;
   
   flex-direction: row;
 }

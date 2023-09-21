@@ -199,17 +199,20 @@ const App = () => {
           "output.mp4"
         );
       }
+      
   
       const outputData = ffmpeg.FS('readFile', 'output.mp4');
       const blob = new Blob([outputData.buffer], { type: 'video/mp4' });
   
       // BlobオブジェクトからURLを生成
       const url = URL.createObjectURL(blob);
+      const timestamp = Date.now(); // 現在のタイムスタンプを取得
+      const fileName = `slideshow_${timestamp}.mp4`; // ユニークなファイル名を生成
   
       // ダウンロード用のリンクを動的に生成
       const a = document.createElement('a');
       a.href = url;
-      a.download = 'slideshow.mp4';
+      a.download = fileName;
       a.style.display = 'none';
   
       // リンクをDOMに追加してクリックイベントを発生させる
@@ -228,7 +231,6 @@ const App = () => {
       setIsConverting(false); // 変換完了後に変換中のフラグを解除
     }
   };
-  
   
   useEffect(() => {
     const handleResize = () => {
