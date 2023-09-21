@@ -203,28 +203,32 @@ const App = () => {
       }
   
       const outputData = ffmpeg.FS('readFile', 'output.mp4');
+      console.log('Output Data:', outputData); // デバッグ用ログ
+
       const blob = new Blob([outputData.buffer], { type: 'video/mp4' });
-  
+      console.log('Blob:', blob); // デバッグ用ログ
+
       // BlobオブジェクトからURLを生成
       const url = URL.createObjectURL(blob);
-  
+
       // ダウンロード用のリンクを動的に生成
       const a = document.createElement('a');
       a.href = url;
       a.download = 'slideshow.mp4';
       a.style.display = 'none';
-  
+
+      console.log('Download Link:', a); // デバッグ用ログ
+
       // リンクをDOMに追加してクリックイベントを発生させる
       document.body.appendChild(a);
       a.click();
-  
+
       // リンクを削除してURLを解放
       document.body.removeChild(a);
       URL.revokeObjectURL(url);
-      window.alert('ダウンロードが完了しました！');
+      console.log('Download completed!');
       setDownloadButtonDisabled(false);
-      console.log('outputData:', outputData);
-  
+
     } catch (error) {
       console.error(error);
       setDownloadButtonDisabled(false);
