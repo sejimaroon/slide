@@ -229,6 +229,7 @@ const App = () => {
     }
   };
   
+  
   useEffect(() => {
     const handleResize = () => {
       setViewportHeight(window.innerHeight);
