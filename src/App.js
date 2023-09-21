@@ -143,7 +143,6 @@ const App = () => {
       for (let i = 0; i < numImages; i++) {
         const slide = capturedSlides[i];
         const imageData = await fetchFile(slide);
-        console.log('imageData:', imageData); // デバッグ用にログ出力
         ffmpeg.FS('writeFile', `input_${i}.jpg`, imageData);
       }
   
@@ -153,7 +152,6 @@ const App = () => {
       }
   
       let xfadeFilters = "";
-  
       for (let i = 0; i < numImages - 1; i++) {
         const changeTime = speed / 1000;
         const offsetTime = autoplayDelay * (i + 1);
@@ -164,12 +162,12 @@ const App = () => {
           xfadeFilters += `[v${i - 1}${i}][v${i + 1}]xfade=transition=fade:duration=${changeTime}:offset=${offsetTime}[v${i}${i + 1}];`;
         }
       }
+  
       if (xfadeFilters.endsWith(";")) {
-        xfadeFilters = xfadeFilters.slice(0, -1) /* + ','*/;
+        xfadeFilters = xfadeFilters.slice(0, -1);
       }
   
       filterComplex += xfadeFilters;
-      /*filterComplex += `scale=trunc(iw/2)*2:trunc(ih/2)*2[v]`;*/
   
       let imageInputs = [];
       for (let i = 0; i < numImages; i++) {
@@ -203,40 +201,34 @@ const App = () => {
       }
   
       const outputData = ffmpeg.FS('readFile', 'output.mp4');
-      console.log('Output Data:', outputData); // デバッグ用ログ
-
       const blob = new Blob([outputData.buffer], { type: 'video/mp4' });
-      console.log('Blob:', blob); // デバッグ用ログ
-
+  
       // BlobオブジェクトからURLを生成
       const url = URL.createObjectURL(blob);
-
+  
       // ダウンロード用のリンクを動的に生成
       const a = document.createElement('a');
       a.href = url;
       a.download = 'slideshow.mp4';
       a.style.display = 'none';
-
-      console.log('Download Link:', a); // デバッグ用ログ
-
+  
       // リンクをDOMに追加してクリックイベントを発生させる
       document.body.appendChild(a);
       a.click();
-
+  
       // リンクを削除してURLを解放
       document.body.removeChild(a);
       URL.revokeObjectURL(url);
-      console.log('Download completed!');
-      setDownloadButtonDisabled(false);
-
+      window.alert('ダウンロードが完了しました！');
     } catch (error) {
       console.error(error);
       setDownloadButtonDisabled(false);
-      setErrorMessage(`downloadエラー：${error}`);
+      setErrorMessage(`ダウンロードエラー：${error.message || error}`);
     } finally {
       setIsConverting(false); // 変換完了後に変換中のフラグを解除
     }
   };
+  
   useEffect(() => {
     const handleResize = () => {
       setViewportHeight(window.innerHeight);
