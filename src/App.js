@@ -93,7 +93,7 @@ const App = () => {
       image.onload = () => {
         ctx.drawImage(image, 0, 0, slide.offsetWidth, slide.offsetHeight);
         // 画像をData URL形式で取得
-        const dataUrl = canvas.toDataURL('image/jpeg', 0.7);
+        const dataUrl = canvas.toDataURL('image/jpeg', 0.8);
         resolve(dataUrl);
       };
       image.src = slide.children[0].src;
