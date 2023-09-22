@@ -7,11 +7,9 @@ import 'swiper/css/navigation';
 import 'swiper/css/pagination';
 import 'swiper/css/scrollbar';
 import 'swiper/css/effect-fade';
-
 import Dropzone from 'react-dropzone';
 import Compressor from 'compressorjs';
 import { createFFmpeg, fetchFile } from '@ffmpeg/ffmpeg';
-
 
 const ffmpeg = createFFmpeg();
 
@@ -95,7 +93,7 @@ const App = () => {
       image.onload = () => {
         ctx.drawImage(image, 0, 0, slide.offsetWidth, slide.offsetHeight);
         // 画像をData URL形式で取得
-        const dataUrl = canvas.toDataURL('image/jpeg', 1.0);
+        const dataUrl = canvas.toDataURL('image/jpeg', 0.7);
         resolve(dataUrl);
       };
       image.src = slide.children[0].src;
