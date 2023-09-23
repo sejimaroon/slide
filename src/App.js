@@ -91,9 +91,10 @@ const App = () => {
     return new Promise((resolve) => {
       const image = new Image();
       image.onload = () => {
+        console.log('Image URL:', image.src); // URL をログに出力
+        console.log('Image loaded success'); 
         ctx.drawImage(image, 0, 0, slide.offsetWidth, slide.offsetHeight);
-        // 画像をData URL形式で取得
-        const dataUrl = canvas.toDataURL('image/png', 0.5);
+        const dataUrl = canvas.toDataURL('image/jpeg', 0.5);
         resolve(dataUrl);
       };
       image.src = slide.children[0].src;
