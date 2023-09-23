@@ -34,7 +34,7 @@ const App = () => {
     for (const file of acceptedFiles) {
       const compressedImage = await new Promise((resolve) => {
         new Compressor(file, {
-          quality: 1,
+          quality: 0.5,
           success(result) {
             resolve(result);
           },
