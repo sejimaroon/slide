@@ -34,7 +34,7 @@ const App = () => {
     for (const file of acceptedFiles) {
       const compressedImage = await new Promise((resolve) => {
         new Compressor(file, {
-          quality: 0.5,
+          quality: 1,
           success(result) {
             resolve(result);
           },
@@ -91,8 +91,7 @@ const App = () => {
     return new Promise((resolve) => {
       const image = new Image();
       image.onload = () => {
-        console.log('Image URL:', image.src); // URL をログに出力
-        console.log('Image loaded success'); 
+        console.log('Image URL:', image.src);
         ctx.drawImage(image, 0, 0, slide.offsetWidth, slide.offsetHeight);
         const dataUrl = canvas.toDataURL('image/jpeg', 0.5);
         resolve(dataUrl);
@@ -101,20 +100,15 @@ const App = () => {
     });
   };
   
-
   const captureSlides = async () => {
     const swiper = swiperRef.current.swiper;
-    const slideElements = swiper.el.children[0].querySelectorAll('.swiper-slide');
-  
+    const slideElements = swiper.el.children[0].querySelectorAll('.swiper-slide');  
     const capturedSlides = [];
-  
     for (const slide of slideElements) {
       const capturedSlide = await captureSlide(slide);
       capturedSlides.push(capturedSlide);
     }
-  
     console.log('capturedSlides:', capturedSlides); // デバッグ用にログ出力
-  
     return capturedSlides;
   };
   

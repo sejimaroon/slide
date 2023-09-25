@@ -17,32 +17,25 @@ app.use(express.static("./dist"));
 
 const ffmpeg = createFFmpeg();
 
-app.post("/slide/download", async (req, res) => {
+app.post('/slide/download', async (req, res) => {
   try {
-    const { images, numImages, autoplayDelay, speed, filename, } = req.body; // 画像の配列と画像の数、autoplayDelay、speedを取得
+    const { images, numImages, autoplayDelay, speed, filename } = req.body;
 
     await ffmpeg.load();
-
-    const tempDir = path.join(__dirname, "temp");
-    if (!fs.existsSync(tempDir)) {
-      fs.mkdirSync(tempDir);
-    }
 
     const imagePaths = [];
     for (let i = 0; i < numImages; i++) {
       const image = images[i];
-      const imagePath = path.join(tempDir, `image_${i}.jpg`);
-      fs.writeFileSync(imagePath, image, "base64");
+      const imagePath = path.join(__dirname, `image_${i}.jpg`);
+      fs.writeFileSync(imagePath, image, 'base64');
       imagePaths.push(imagePath);
     }
 
-    ffmpeg.FS(
-      "writeFiles",
-      imagePaths.map((imagePath, index) => ({
-        name: `input_${index}.jpg`,
-        data: fetchFile(imagePath),
-      }))
-    );
+    ffmpeg.FS('writeFiles', imagePaths.map((imagePath, index) => ({
+      name: `input_${index}.jpg`,
+      data: fetchFile(imagePath),
+    })));
+
 
     let filterComplex = "";
 
@@ -100,18 +93,13 @@ app.post("/slide/download", async (req, res) => {
         "output.mp4"
       );
     }
-    const outputFilePath = path.join(tempDir, "output.mp4");
-    if (fs.existsSync(outputFilePath)) {
-      const outputData = fs.readFileSync(outputFilePath);
-      res.set("Content-Type", "video/mp4");
-      res.set("Content-Disposition", `attachment; filename="${filename}"`);
-      res.send(outputData);
-    } else {
-      throw new Error("Output video file not found.");
-    }
+    const outputData = ffmpeg.FS('readFile', 'output.mp4');
+    res.set('Content-Type', 'video/mp4');
+    res.set('Content-Disposition', `attachment; filename="${filename}"`);
+    res.send(outputData.buffer);
   } catch (error) {
-    console.error("Error generating video:", error);
-    res.status(500).json({ error: "Failed to generate video" });
+    console.error('Error generating video:', error);
+    res.status(500).json({ error: 'Failed to generate video' });
   }
 });
 
