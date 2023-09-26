@@ -39,7 +39,7 @@ const App = () => {
             resolve(result);
           },
           error(err) {
-            console.error(err);
+            console.log(err);
             resolve(null);
           },
         });
@@ -109,6 +109,7 @@ const App = () => {
       capturedSlides.push(capturedSlide);
     }
     console.log('capturedSlides:', capturedSlides); // デバッグ用にログ出力
+    
     return capturedSlides;
   };
   
@@ -217,7 +218,7 @@ const App = () => {
       URL.revokeObjectURL(url);
       window.alert('ダウンロードが完了しました！');
     } catch (error) {
-      console.error(error);
+      console.log(error);
       setDownloadButtonDisabled(false);
       setErrorMessage(`ダウンロードエラー：${error.message || error}`);
     } finally {
