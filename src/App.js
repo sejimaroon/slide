@@ -39,7 +39,7 @@ const App = () => {
             resolve(result);
           },
           error(err) {
-            console.log(err);
+            console.error(err);
             resolve(null);
           },
         });
@@ -109,34 +109,32 @@ const App = () => {
       capturedSlides.push(capturedSlide);
     }
     console.log('capturedSlides:', capturedSlides); // デバッグ用にログ出力
-    
     return capturedSlides;
   };
-  
 
   const handleDownload = async () => {
     if (downloadButtonDisabled) {
-      // ダウンロード中またはボタンが無効ならば何もしない
-      return;
+      return;// ダウンロード中またはボタンが無効ならば何もしない
     }
     setIsConverting(true); // 変換中のフラグを立てる
     setErrorMessage('');
     setDownloadButtonDisabled(true); // ダウンロードボタンを無効化
-  
     try {
       const capturedSlides = await captureSlides();
       setCapturedImages(capturedSlides);
-  
+      // ffmpeg.load
       await ffmpeg.load();
       ffmpeg.setProgress(({ ratio }) => {
         console.log(`Conversion progress: ${Math.round(ratio * 100)}%`);
       });
   
       const numImages = capturedSlides.length;
-  
+      console.log(numImages);
       for (let i = 0; i < numImages; i++) {
         const slide = capturedSlides[i];
+        console.log(slide);
         const imageData = await fetchFile(slide);
+        console.log(imageData);
         ffmpeg.FS('writeFile', `input_${i}.jpg`, imageData);
       }
   
@@ -200,8 +198,8 @@ const App = () => {
   
       // BlobオブジェクトからURLを生成
       const url = URL.createObjectURL(blob);
-      const timestamp = Date.now(); // 現在のタイムスタンプを取得
-      const fileName = `slideshow_${timestamp}.mp4`; // ユニークなファイル名を生成
+      const timestamp = Date.now(); 
+      const fileName = `slideshow_${timestamp}.mp4`; 
   
       // ダウンロード用のリンクを動的に生成
       const a = document.createElement('a');
@@ -218,7 +216,7 @@ const App = () => {
       URL.revokeObjectURL(url);
       window.alert('ダウンロードが完了しました！');
     } catch (error) {
-      console.log(error);
+      console.error(error);
       setDownloadButtonDisabled(false);
       setErrorMessage(`ダウンロードエラー：${error.message || error}`);
     } finally {
