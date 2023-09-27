@@ -9,9 +9,10 @@ import 'swiper/css/scrollbar';
 import 'swiper/css/effect-fade';
 import Dropzone from 'react-dropzone';
 import Compressor from 'compressorjs';
-import { createFFmpeg, fetchFile } from '@ffmpeg/ffmpeg';
+import { FFmpeg } from '@ffmpeg/ffmpeg';
+import { fetchFile } from '@ffmpeg/util';
 
-const ffmpeg = createFFmpeg();
+const ffmpeg = FFmpeg();
 
 const App = () => {
   const [images, setImages] = useState([]);
